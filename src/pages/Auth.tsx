@@ -55,7 +55,7 @@ const Auth = () => {
         }
       } else {
         toast.success('Welcome back!');
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       toast.error('An unexpected error occurred. Please try again.');
