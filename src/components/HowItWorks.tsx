@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserPlus, Settings, Stethoscope, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const HowItWorks = () => {
   const steps = [
@@ -74,9 +75,11 @@ const HowItWorks = () => {
         </div>
 
         <div className="text-center">
-          <Button variant="hero" size="xl" className="group">
-            Start Your Free Trial
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+          <Button variant="hero" size="xl" className="group" asChild>
+            <Link to="/auth">
+              Start Your Free Trial
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </Button>
           <p className="text-sm text-medical-gray mt-4">
             No credit card required • 30-day free trial • Setup assistance included

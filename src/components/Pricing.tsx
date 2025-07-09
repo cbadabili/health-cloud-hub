@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Star, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Pricing = () => {
   const plans = [
@@ -113,9 +114,12 @@ const Pricing = () => {
                 variant={plan.popular ? "hero" : "medical-outline"} 
                 size="lg" 
                 className="w-full group"
+                asChild
               >
-                {plan.cta}
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <Link to="/auth">
+                  {plan.cta}
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
               </Button>
             </Card>
           ))}
