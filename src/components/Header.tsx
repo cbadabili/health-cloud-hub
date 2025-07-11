@@ -20,15 +20,15 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="p-2 bg-gradient-primary rounded-lg">
               <Stethoscope className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">MedFlow</h1>
+              <h1 className="text-xl font-bold text-foreground">Clinithetics</h1>
               <p className="text-xs text-muted-foreground">EMR & Billing</p>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">

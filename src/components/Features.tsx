@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { 
   Calendar, 
   FileText, 
@@ -18,63 +19,72 @@ const Features = () => {
       title: "Smart Scheduling",
       description: "Automated appointment booking with conflict detection and patient reminders.",
       color: "bg-medical-light-blue",
-      iconColor: "text-medical-blue"
+      iconColor: "text-medical-blue",
+      route: "/dashboard"
     },
     {
       icon: FileText,
       title: "Complete EMR/EHR",
       description: "Digital patient records with real-time updates and seamless data integration.",
       color: "bg-medical-light-green",
-      iconColor: "text-medical-green"
+      iconColor: "text-medical-green",
+      route: "/dashboard"
     },
     {
       icon: CreditCard,
       title: "Intelligent Billing",
       description: "Automated invoicing with PMB claims processing and payment tracking.",
       color: "bg-medical-light-blue",
-      iconColor: "text-medical-blue"
+      iconColor: "text-medical-blue",
+      route: "/dashboard"
     },
     {
       icon: Video,
       title: "Telehealth Platform",
       description: "Secure video consultations with integrated note-taking and prescriptions.",
       color: "bg-medical-light-green",
-      iconColor: "text-medical-green"
+      iconColor: "text-medical-green",
+      route: "/dashboard"
     },
     {
       icon: Pill,
       title: "Digital Prescriptions",
       description: "Create and send secure digital prescriptions directly to patients.",
       color: "bg-medical-light-blue",
-      iconColor: "text-medical-blue"
+      iconColor: "text-medical-blue",
+      route: "/dashboard"
     },
     {
       icon: BarChart3,
       title: "Analytics & Reports",
       description: "Comprehensive practice insights with revenue and performance analytics.",
       color: "bg-medical-light-green",
-      iconColor: "text-medical-green"
+      iconColor: "text-medical-green",
+      route: "/dashboard"
     },
     {
       icon: Shield,
       title: "HIPAA Compliance",
       description: "Bank-level security with encrypted data and audit trails.",
       color: "bg-medical-light-blue",
-      iconColor: "text-medical-blue"
+      iconColor: "text-medical-blue",
+      route: "/auth"
     },
     {
       icon: Users,
       title: "Multi-Role Access",
       description: "Separate dashboards for doctors, patients, and administrators.",
       color: "bg-medical-light-green",
-      iconColor: "text-medical-green"
+      iconColor: "text-medical-green",
+      route: "/dashboard"
     },
     {
       icon: Clock,
       title: "24/7 Support",
       description: "Round-the-clock technical support and system monitoring.",
       color: "bg-medical-light-blue",
-      iconColor: "text-medical-blue"
+      iconColor: "text-medical-blue",
+      route: "mailto:support@clinithetics.com"
     }
   ];
 
@@ -92,22 +102,37 @@ const Features = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <Card 
-              key={index} 
-              className="p-6 border border-border hover:shadow-card transition-all duration-300 hover:transform hover:scale-105 bg-gradient-card"
-            >
-              <div className={`p-3 ${feature.color} rounded-xl w-fit mb-4`}>
-                <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
-              </div>
-              <h3 className="text-xl font-semibold text-medical-dark mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-medical-gray leading-relaxed">
-                {feature.description}
-              </p>
-            </Card>
-          ))}
+          {features.map((feature, index) => {
+            const CardContent = (
+              <Card 
+                className="p-6 border border-border hover:shadow-card transition-all duration-300 hover:transform hover:scale-105 bg-gradient-card cursor-pointer h-full"
+              >
+                <div className={`p-3 ${feature.color} rounded-xl w-fit mb-4`}>
+                  <feature.icon className={`h-6 w-6 ${feature.iconColor}`} />
+                </div>
+                <h3 className="text-xl font-semibold text-medical-dark mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-medical-gray leading-relaxed">
+                  {feature.description}
+                </p>
+              </Card>
+            );
+
+            if (feature.route.startsWith('mailto:')) {
+              return (
+                <a key={index} href={feature.route} className="block h-full">
+                  {CardContent}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={index} to={feature.route} className="block h-full">
+                {CardContent}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

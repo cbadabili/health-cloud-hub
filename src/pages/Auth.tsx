@@ -117,7 +117,7 @@ const Auth = () => {
               <Stethoscope className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-medical-dark">MedFlow</h1>
+              <h1 className="text-xl font-bold text-medical-dark">Clinithetics</h1>
               <p className="text-xs text-medical-gray">EMR & Billing</p>
             </div>
           </div>
@@ -126,7 +126,7 @@ const Auth = () => {
         <Card className="border border-border shadow-card">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-medical-dark">
-              Welcome to MedFlow
+              Welcome to Clinithetics
             </CardTitle>
           </CardHeader>
           <CardContent>
