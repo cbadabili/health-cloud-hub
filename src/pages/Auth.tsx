@@ -50,6 +50,10 @@ const Auth = () => {
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Invalid email or password. Please check your credentials.');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Please check your email and click the confirmation link before signing in.');
+        } else if (error.message.includes('email_address_not_authorized')) {
+          toast.error('Please confirm your email address before signing in.');
         } else {
           toast.error(error.message);
         }
