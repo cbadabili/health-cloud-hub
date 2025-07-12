@@ -13,6 +13,7 @@ import {
   Shield,
   BarChart3
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import UserManagement from "@/components/admin/UserManagement";
 import SubscriptionManagement from "@/components/admin/SubscriptionManagement";
 import PaymentsModule from "@/components/admin/PaymentsModule";
@@ -59,17 +60,22 @@ const SuperAdminDashboard = () => {
       <header className="bg-card border-b border-border">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-gradient-primary rounded-lg">
+            <Link to="/" className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity">
               <Shield className="h-6 w-6 text-primary-foreground" />
-            </div>
+            </Link>
             <div>
               <h1 className="text-xl font-bold text-foreground">Super Admin Dashboard</h1>
               <p className="text-sm text-muted-foreground">Welcome back, {user?.email}</p>
             </div>
           </div>
-          <Button variant="outline" onClick={signOut}>
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button variant="outline" asChild>
+              <Link to="/">Home</Link>
+            </Button>
+            <Button variant="outline" onClick={signOut}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -114,7 +120,11 @@ const SuperAdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button className="h-20 flex flex-col gap-2" variant="outline">
+                  <Button 
+                    className="h-20 flex flex-col gap-2" 
+                    variant="outline"
+                    onClick={() => setActiveTab("users")}
+                  >
                     <UserPlus className="h-6 w-6" />
                     Add User
                   </Button>
@@ -122,11 +132,19 @@ const SuperAdminDashboard = () => {
                     <BarChart3 className="h-6 w-6" />
                     View Reports
                   </Button>
-                  <Button className="h-20 flex flex-col gap-2" variant="outline">
+                  <Button 
+                    className="h-20 flex flex-col gap-2" 
+                    variant="outline"
+                    onClick={() => setActiveTab("payments")}
+                  >
                     <DollarSign className="h-6 w-6" />
                     Process Payments
                   </Button>
-                  <Button className="h-20 flex flex-col gap-2" variant="outline">
+                  <Button 
+                    className="h-20 flex flex-col gap-2" 
+                    variant="outline"
+                    onClick={() => setActiveTab("claims")}
+                  >
                     <FileText className="h-6 w-6" />
                     Review Claims
                   </Button>

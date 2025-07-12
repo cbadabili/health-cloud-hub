@@ -13,6 +13,7 @@ import {
   Clock,
   Stethoscope
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AppointmentScheduler from "@/components/doctor/AppointmentScheduler";
 import PatientRecords from "@/components/doctor/PatientRecords";
 import PrescriptionManager from "@/components/doctor/PrescriptionManager";
@@ -66,18 +67,21 @@ const DoctorDashboard = () => {
       <header className="bg-card border-b border-border">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-gradient-primary rounded-lg">
+            <Link to="/" className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity">
               <Stethoscope className="h-6 w-6 text-primary-foreground" />
-            </div>
+            </Link>
             <div>
               <h1 className="text-xl font-bold text-foreground">Doctor Dashboard</h1>
               <p className="text-sm text-muted-foreground">Welcome back, Dr. {user?.email?.split('@')[0]}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")}>
               <Video className="h-4 w-4 mr-2" />
               Start Telehealth
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/">Home</Link>
             </Button>
             <Button variant="outline" onClick={signOut}>
               Sign Out
@@ -147,7 +151,11 @@ const DoctorDashboard = () => {
                       </div>
                     ))}
                   </div>
-                  <Button className="w-full mt-4" variant="outline">
+                  <Button 
+                    className="w-full mt-4" 
+                    variant="outline"
+                    onClick={() => setActiveTab("appointments")}
+                  >
                     View Full Schedule
                   </Button>
                 </CardContent>
@@ -160,19 +168,35 @@ const DoctorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("appointments")}
+                    >
                       <Calendar className="h-6 w-6" />
                       New Appointment
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("patients")}
+                    >
                       <FileText className="h-6 w-6" />
                       Patient Notes
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("prescriptions")}
+                    >
                       <Pill className="h-6 w-6" />
                       Prescribe Medication
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("telehealth")}
+                    >
                       <Video className="h-6 w-6" />
                       Start Video Call
                     </Button>

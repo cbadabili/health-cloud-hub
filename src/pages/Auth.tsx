@@ -59,7 +59,10 @@ const Auth = () => {
         }
       } else {
         toast.success('Welcome back!');
-        window.location.href = '/dashboard';
+        // Small delay to ensure the session is set before navigation
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       }
     } catch (error) {
       toast.error('An unexpected error occurred. Please try again.');
@@ -97,7 +100,14 @@ const Auth = () => {
           toast.error(error.message);
         }
       } else if (data.user) {
-        toast.success('Account created successfully! Please check your email for verification.');
+        if (data.user.email_confirmed_at) {
+          toast.success('Account created successfully! Redirecting to dashboard...');
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+        } else {
+          toast.success('Account created successfully! Please check your email for verification.');
+        }
       }
     } catch (error) {
       toast.error('An unexpected error occurred. Please try again.');

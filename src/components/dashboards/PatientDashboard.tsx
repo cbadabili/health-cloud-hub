@@ -13,6 +13,7 @@ import {
   Clock,
   User
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AppointmentBooking from "@/components/patient/AppointmentBooking";
 import MedicalRecords from "@/components/patient/MedicalRecords";
 import PaymentHistory from "@/components/patient/PaymentHistory";
@@ -72,18 +73,21 @@ const PatientDashboard = () => {
       <header className="bg-card border-b border-border">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-gradient-primary rounded-lg">
+            <Link to="/" className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity">
               <User className="h-6 w-6 text-primary-foreground" />
-            </div>
+            </Link>
             <div>
               <h1 className="text-xl font-bold text-foreground">Patient Portal</h1>
               <p className="text-sm text-muted-foreground">Welcome back, {user?.email?.split('@')[0]}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")}>
               <Video className="h-4 w-4 mr-2" />
               Join Telehealth
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/">Home</Link>
             </Button>
             <Button variant="outline" onClick={signOut}>
               Sign Out
@@ -145,7 +149,11 @@ const PatientDashboard = () => {
                       </div>
                     ))}
                   </div>
-                  <Button className="w-full mt-4" variant="outline">
+                  <Button 
+                    className="w-full mt-4" 
+                    variant="outline"
+                    onClick={() => setActiveTab("appointments")}
+                  >
                     Book New Appointment
                   </Button>
                 </CardContent>
@@ -158,19 +166,35 @@ const PatientDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("appointments")}
+                    >
                       <Calendar className="h-6 w-6" />
                       Book Appointment
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("records")}
+                    >
                       <FileText className="h-6 w-6" />
                       View Records
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("records")}
+                    >
                       <Pill className="h-6 w-6" />
                       Prescriptions
                     </Button>
-                    <Button className="h-20 flex flex-col gap-2" variant="outline">
+                    <Button 
+                      className="h-20 flex flex-col gap-2" 
+                      variant="outline"
+                      onClick={() => setActiveTab("payments")}
+                    >
                       <DollarSign className="h-6 w-6" />
                       Pay Bills
                     </Button>
