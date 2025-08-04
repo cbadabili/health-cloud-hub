@@ -73,7 +73,11 @@ const PatientDashboard = () => {
       <header className="bg-card border-b border-border">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity">
+            <Link 
+              to="/" 
+              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <User className="h-6 w-6 text-primary-foreground" />
             </Link>
             <div>

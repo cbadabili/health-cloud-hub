@@ -67,7 +67,11 @@ const DoctorDashboard = () => {
       <header className="bg-card border-b border-border">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/" className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity">
+            <Link 
+              to="/" 
+              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <Stethoscope className="h-6 w-6 text-primary-foreground" />
             </Link>
             <div>
@@ -131,7 +135,7 @@ const DoctorDashboard = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {upcomingAppointments.map((appointment, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                      <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
                           <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
                             {appointment.time}
@@ -141,13 +145,20 @@ const DoctorDashboard = () => {
                             <p className="text-sm text-muted-foreground">{appointment.type}</p>
                           </div>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          appointment.status === 'confirmed' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {appointment.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            appointment.status === 'confirmed' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {appointment.status}
+                          </span>
+                          {appointment.type === 'Telehealth' && (
+                            <Button size="sm" variant="outline" onClick={() => setActiveTab("telehealth")}>
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
