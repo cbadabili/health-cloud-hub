@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, User, Stethoscope } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar, Clock, MapPin, User, Stethoscope, Video, FileText, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 const AppointmentBooking = () => {
@@ -53,13 +54,36 @@ const AppointmentBooking = () => {
       return;
     }
 
-    toast.success("Appointment request sent! You'll receive confirmation shortly.");
+    const selectedDoctorInfo = doctors.find(doc => doc.id === selectedDoctor);
+    toast.success(`Appointment booked with ${selectedDoctorInfo?.name} on ${selectedDate} at ${selectedTime}!`);
     
     // Reset form
     setSelectedDoctor("");
     setSelectedDate("");
     setSelectedTime("");
     setReason("");
+  };
+
+  const handleViewDetails = (appointment: any) => {
+    toast.info(`Viewing details for appointment with ${appointment.doctor}`);
+  };
+
+  const handleJoinCall = (appointment: any) => {
+    if (appointment.location === 'Telehealth') {
+      toast.success(`Joining telehealth session with ${appointment.doctor}`);
+      // Open telehealth interface
+      window.open('/telehealth-session', '_blank');
+    } else {
+      toast.info(`Please visit ${appointment.location} for your appointment`);
+    }
+  };
+
+  const handleCancelAppointment = (appointment: any) => {
+    toast.success(`Appointment with ${appointment.doctor} has been cancelled`);
+  };
+
+  const handleRescheduleAppointment = (appointment: any) => {
+    toast.info(`Rescheduling appointment with ${appointment.doctor}`);
   };
 
   return (
@@ -187,9 +211,78 @@ const AppointmentBooking = () => {
                   }`}>
                     {appointment.status}
                   </span>
-                  <Button variant="outline" size="sm">
-                    {appointment.location === 'Telehealth' ? 'Join Call' : 'View Details'}
-                  </Button>
+                  
+                  {appointment.location === 'Telehealth' ? (
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => handleJoinCall(appointment)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Video className="h-4 w-4 mr-1" />
+                      Join Call
+                    </Button>
+                  ) : (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Appointment Details</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Doctor</p>
+                              <p className="font-semibold">{appointment.doctor}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Specialty</p>
+                              <p>{appointment.specialty}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Date</p>
+                              <p>{new Date(appointment.date).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Time</p>
+                              <p>{appointment.time}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Location</p>
+                              <p>{appointment.location}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Status</p>
+                              <p className="capitalize">{appointment.status}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t pt-4 space-y-2">
+                            <Button 
+                              variant="outline" 
+                              className="w-full"
+                              onClick={() => handleRescheduleAppointment(appointment)}
+                            >
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Reschedule
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              className="w-full"
+                              onClick={() => handleCancelAppointment(appointment)}
+                            >
+                              Cancel Appointment
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
               </div>
             ))}
