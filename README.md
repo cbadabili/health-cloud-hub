@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# Health Cloud Hub
 
-## Project info
+Cloud-based Electronic Medical Records (EMR) and medical billing platform.
 
-**URL**: https://lovable.dev/projects/ff61abec-d01c-4fc7-8740-e198a1865f1b
+---
 
-## How can I edit this code?
+## Tech Stack
 
-There are several ways of editing your application.
+- React + TypeScript  
+- Vite (build & dev server)  
+- Tailwind CSS  
+- shadcn-ui (Radix UI primitives)  
+- Supabase (auth & database)  
+- React Router DOM  
+- @tanstack/react-query  
 
-**Use Lovable**
+---
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ff61abec-d01c-4fc7-8740-e198a1865f1b) and start prompting.
+## Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# 1. Clone the repository
+git clone https://github.com/your-org/health-cloud-hub.git
+cd health-cloud-hub
 
-**Use your preferred IDE**
+# 2. Install dependencies
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3. Start the dev server (Vite)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Vite starts on port **8080** by default.  
+If that port is busy it will automatically pick the next free port (check the console output).  
+Open the printed URL, e.g. `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## npm Scripts
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Script     | Purpose                           |
+|------------|-----------------------------------|
+| `dev`      | Start Vite development server     |
+| `build`    | Production build to `dist/`       |
+| `preview`  | Preview the production build      |
+| `lint`     | Run ESLint over the codebase      |
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## Configuration Notes
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Vite** configuration: `vite.config.ts`  
+  - Sets server host/port, aliases, and React SWC plugin.
+- **Tailwind CSS** configuration: `tailwind.config.ts`  
+  - Custom theme and shadcn-ui integration.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/ff61abec-d01c-4fc7-8740-e198a1865f1b) and click on Share -> Publish.
+## Folder Structure (high level)
 
-## Can I connect a custom domain to my Lovable project?
+```
+src/
+├─ pages/               # Route components (Index, Auth, Dashboard, …)
+├─ components/
+│  ├─ ui/               # shadcn-ui derived primitives
+│  ├─ dashboards/       # Role-specific dashboards
+│  ├─ admin/ doctor/ …  # Feature modules
+├─ hooks/               # Reusable React hooks
+├─ integrations/
+│  └─ supabase/         # Supabase client & types
+└─ lib/                 # Utility helpers
+```
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+[MIT](LICENSE) (placeholder – update with your license of choice)
