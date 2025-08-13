@@ -12,7 +12,7 @@ const Footer = () => {
                 <Stethoscope className="h-6 w-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">MedFlow</h1>
+                <h1 className="text-xl font-bold text-white">Clinithetics</h1>
                 <p className="text-xs text-gray-400">EMR & Billing</p>
               </div>
             </div>
@@ -23,7 +23,7 @@ const Footer = () => {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-medical-blue" />
-                <span className="text-sm">support@medflow.co.za</span>
+                <span className="text-sm">support@clinithetics.com</span>
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="h-4 w-4 text-medical-blue" />
@@ -64,7 +64,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-sm">
-              © 2024 MedFlow EMR & Billing. All rights reserved.
+              © {new Date().getFullYear()} Clinithetics EMR & Billing. All rights reserved.
             </p>
             <div className="flex gap-6">
               <a href="#" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Privacy Policy</a>

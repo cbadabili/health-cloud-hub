@@ -130,7 +130,7 @@ const Pricing = () => {
             All plans include 30-day free trial • No setup fees • Cancel anytime
           </p>
           <p className="text-sm text-medical-gray">
-            Need a custom solution? <a href="mailto:sales@medflow.com" className="text-medical-blue hover:underline">Contact our sales team</a>
+            Need a custom solution? <a href="mailto:sales@clinithetics.com" className="text-medical-blue hover:underline">Contact our sales team</a>
           </p>
         </div>
       </div>

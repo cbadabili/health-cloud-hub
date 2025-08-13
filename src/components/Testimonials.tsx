@@ -7,7 +7,7 @@ const Testimonials = () => {
       name: "Dr. Sarah Chen",
       role: "Family Medicine",
       location: "Cape Town, SA",
-      content: "MedFlow has transformed our practice. The integrated billing and EMR system saves us hours every day, and our patients love the telehealth features.",
+      content: "Clinithetics has transformed our practice. The integrated billing and EMR system saves us hours every day, and our patients love the telehealth features.",
       rating: 5,
       avatar: "SC"
     },
@@ -61,7 +61,7 @@ const Testimonials = () => {
             Trusted by Healthcare Professionals
           </h2>
           <p className="text-xl text-medical-gray max-w-3xl mx-auto">
-            Join thousands of doctors and practices who have transformed their operations with MedFlow.
+            Join thousands of doctors and practices who have transformed their operations with Clinithetics.
           </p>
         </div>
 
@@ -103,7 +103,7 @@ const Testimonials = () => {
               ))}
             </div>
             <div className="text-medical-dark">
-              <span className="font-semibold">10,000+</span> healthcare professionals trust MedFlow
+              <span className="font-semibold">10,000+</span> healthcare professionals trust Clinithetics
             </div>
           </div>
         </div>
