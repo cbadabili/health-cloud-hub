@@ -51,10 +51,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!user) {
-    window.location.href = "/auth";
-    return null;
-  }
+  if (!user) return null;
 
   // Render appropriate dashboard based on user role
   switch (userRole) {

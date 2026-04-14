@@ -76,6 +76,12 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{12,}$/;
+      if (!strongPasswordPattern.test(formData.password)) {
+        toast.error('Use a stronger password: 12+ chars, uppercase, lowercase, number, and symbol.');
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -95,9 +101,9 @@ const Auth = () => {
         if (error.message.includes('User already registered')) {
           toast.error('An account with this email already exists. Please sign in instead.');
         } else if (error.message.includes('Password should be')) {
-          toast.error('Password must be at least 6 characters long.');
+          toast.error('Password does not meet security requirements.');
         } else {
-          toast.error(error.message);
+          toast.error('Could not create account. Please verify your details and try again.');
         }
       } else if (data.user) {
         if (data.user.email_confirmed_at) {
@@ -253,9 +259,9 @@ const Auth = () => {
                         type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleInputChange}
-                        placeholder="Create a password (min. 6 characters)"
+                        placeholder="Create a password"
                         required
-                        minLength={6}
+                        minLength={12}
                       />
                       <Button
                         type="button"
@@ -271,6 +277,9 @@ const Auth = () => {
                         )}
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Password must be at least 12 characters and include uppercase, lowercase, a number, and a symbol.
+                    </p>
                   </div>
                   
                   <div className="space-y-2">
