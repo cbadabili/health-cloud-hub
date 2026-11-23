@@ -120,11 +120,17 @@ and see the profiles of patients who booked with them. Verify registration
 (HPCSA in SA, BHPC in Botswana) before activating doctor accounts, or use an
 admin approval step.
 
-### 5.3 Telehealth is blocked by our own headers 🟡
-`vercel.json` sets `Permissions-Policy: camera=(), microphone=()`, which stops
-the browser from using the camera and microphone. Video consultations cannot
-work until this is relaxed to `camera=(self)` and `microphone=(self)` (plus the
-video provider's origin in the CSP).
+### 5.3 Telehealth was blocked by our own headers ✅ fixed
+`vercel.json` now sends `Permissions-Policy: camera=(self), microphone=(self),
+geolocation=()`. Tested in Chromium against the built site: with the old
+header `getUserMedia` failed with `NotAllowedError`; with the new one it
+returns audio and video tracks. Geolocation stays blocked.
+
+Note: the telehealth screens do not capture any media yet (the controls are
+UI only). When a video provider is chosen, its origin must be added to the
+CSP and, if it runs in an iframe, to the Permissions-Policy, e.g.
+`camera=(self "https://video.example.com")`. Patient consent and recording
+rules (HPCSA telehealth guidance) need covering too.
 
 ---
 
