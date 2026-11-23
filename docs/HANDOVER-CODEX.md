@@ -57,6 +57,11 @@ platform payments/payouts, or medical-aid claims.
   hand only.
 - **Done:** `vercel.json` now allows `camera=(self), microphone=(self)`.
 
+- **Done:** doctor verification (`doctor_verifications` table, approved-only
+  doctor RLS, admin Verifications tab, holding screen for unapproved doctors).
+  Any new doctor-facing policy must also require
+  `public.is_verified_doctor(auth.uid())`.
+
 ### 0b. Telehealth video is not implemented yet
 `src/components/doctor/TelehealthSession.tsx` and
 `src/components/patient/TelehealthAccess.tsx` only toggle UI state. No

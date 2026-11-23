@@ -95,6 +95,45 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_verifications: {
+        Row: {
+          council: Database["public"]["Enums"]["registration_council"] | null
+          created_at: string
+          doctor_id: string
+          registration_number: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["verification_status"]
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          council?: Database["public"]["Enums"]["registration_council"] | null
+          created_at?: string
+          doctor_id: string
+          registration_number?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          council?: Database["public"]["Enums"]["registration_council"] | null
+          created_at?: string
+          doctor_id?: string
+          registration_number?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["verification_status"]
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           amount: number
@@ -371,9 +410,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_verified_doctor: {
+        Args: {
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "super_admin" | "doctor" | "patient"
+      registration_council: "HPCSA" | "BHPC"
+      verification_status: "not_submitted" | "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -502,6 +549,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["super_admin", "doctor", "patient"],
+      registration_council: ["HPCSA", "BHPC"],
+      verification_status: ["not_submitted", "pending", "approved", "rejected"],
     },
   },
 } as const
