@@ -68,7 +68,7 @@ sources disagree **[verify]**.
 | **Lawful basis for health data** | s 11; s 26 prohibition with s 32 exemption for healthcare providers; 2026 health regulations | Sensitive data is prohibited by default, with listed conditions that allow it **[verify that health data is listed]** | 🟡 | The platform assumes practices process under the healthcare exemption. There is no record of which basis applies per practice, and no patient consent capture. |
 | **Purpose & minimality** | s 10, 13, 15 | Purpose limitation & minimisation | 🟡 | Role-based dashboards limit what each role sees. No documented purposes, and some fields are broader than needed (e.g. free-text medical history). |
 | **Openness / privacy notice** | s 17–18 | Transparency duties | ❌ | No privacy policy or patient notice. The footer "Privacy Policy" link goes nowhere. |
-| **Access control** | s 19 | Security safeguards | 🟡 | RLS is enabled. **But see the critical issue in §5:** users can grant themselves `super_admin` at sign-up. Doctors are not verified against HPCSA or BHPC registers. |
+| **Access control** | s 19 | Security safeguards | 🟡 | RLS is enabled. **But see the critical issue in §5:** users can grant themselves `super_admin` at sign-up. Doctors now need admin approval after a registration check (§5.2). |
 | **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest is handled by the database host **[confirm on our Supabase plan]**. No field-level encryption for clinical notes. |
 | **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | ❌ | No logging of who viewed, changed or exported a record. |
 | **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Supabase, Vercel). |
@@ -114,11 +114,20 @@ policies, which means full read and write access to every patient's records.
 function. Then audit existing `user_roles` rows for unexpected
 `super_admin` entries.
 
-### 5.2 Doctors are not verified 🟠
-Any sign-up can choose "doctor". A doctor account can create medical records
-and see the profiles of patients who booked with them. Verify registration
-(HPCSA in SA, BHPC in Botswana) before activating doctor accounts, or use an
-admin approval step.
+### 5.2 Doctors were not verified ✅ fixed in code, must be applied to production
+Any sign-up could choose "doctor" and immediately get doctor access.
+`supabase/migrations/20261123200000-doctor-verification.sql` adds
+`doctor_verifications` (council HPCSA/BHPC, registration number, status) and
+makes **every doctor RLS policy require an approved verification**. Patients
+only see, and can only book with, verified doctors. Doctors submit details at
+sign-up or on a holding screen; only super_admins approve or reject them, in
+the admin **Verifications** tab, and each decision is stamped with who made it
+and when. Tested on Postgres 16 with RLS (14 checks), including attempted
+self-approval.
+
+Limits: checking a number against the HPCSA iRegister, or with BHPC (which
+has no public online register), is a manual admin step. Existing doctors are
+set to "details needed" when the migration runs and must be approved again.
 
 ### 5.3 Telehealth was blocked by our own headers ✅ fixed
 `vercel.json` now sends `Permissions-Policy: camera=(self), microphone=(self),
@@ -138,7 +147,7 @@ rules (HPCSA telehealth guidance) need covering too.
 
 Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
 1. ~~Fix the `super_admin` sign-up hole (§5.1)~~ done in code; apply the migration to production and audit existing roles.
-2. Add doctor verification or admin approval (§5.2).
+2. ~~Add doctor verification (§5.2)~~ done in code; apply the migration and approve existing doctors.
 3. Add an append-only audit log for record views, edits, exports and admin
    actions.
 4. Build patient data rights flows: export, correction request, deletion

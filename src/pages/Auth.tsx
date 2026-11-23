@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import ThemeToggle from '@/components/ThemeToggle';
+import { COUNCILS, isValidRegistrationNumber, type RegistrationCouncil } from '@/lib/doctorVerification';
 
 const Auth = () => {
   const { user } = useAuth();
@@ -25,7 +26,9 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: initialRole
+    role: initialRole,
+    registrationCouncil: '' as RegistrationCouncil | '',
+    registrationNumber: ''
   });
 
   // Keep the form in sync if the query string changes while on this page
@@ -96,6 +99,16 @@ const Auth = () => {
         return;
       }
 
+      const isDoctor = formData.role === 'doctor';
+      if (isDoctor && !formData.registrationCouncil) {
+        toast.error('Please choose the council you are registered with.');
+        return;
+      }
+      if (isDoctor && !isValidRegistrationNumber(formData.registrationNumber)) {
+        toast.error('Please enter your registration number (3 to 40 characters).');
+        return;
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -106,7 +119,11 @@ const Auth = () => {
           data: {
             first_name: formData.firstName,
             last_name: formData.lastName,
-            role: formData.role
+            role: formData.role,
+            ...(isDoctor && {
+              registration_council: formData.registrationCouncil,
+              registration_number: formData.registrationNumber.trim()
+            })
           }
         }
       });
@@ -120,6 +137,9 @@ const Auth = () => {
           toast.error('Could not create account. Please verify your details and try again.');
         }
       } else if (data.user) {
+        if (isDoctor) {
+          toast.success('Account created. We will verify your registration before you can access patient data.');
+        }
         if (data.user.email_confirmed_at) {
           toast.success('Account created successfully! Redirecting to dashboard...');
           setTimeout(() => {
@@ -330,6 +350,48 @@ const Auth = () => {
                       </label>
                     </div>
                   </div>
+
+                  {formData.role === 'doctor' && (
+                    <div className="space-y-4 rounded-lg border border-border bg-muted/40 p-4">
+                      <p className="text-xs text-muted-foreground">
+                        We check every doctor's registration before giving access to patient data.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="registration-council">Registered with</Label>
+                        <select
+                          id="registration-council"
+                          name="registrationCouncil"
+                          required
+                          value={formData.registrationCouncil}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            registrationCouncil: e.target.value as RegistrationCouncil
+                          })}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <option value="" disabled>Choose a council</option>
+                          {(Object.keys(COUNCILS) as RegistrationCouncil[]).map((code) => (
+                            <option key={code} value={code}>
+                              {COUNCILS[code].label} ({COUNCILS[code].country})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="registration-number">Registration number</Label>
+                        <Input
+                          id="registration-number"
+                          name="registrationNumber"
+                          value={formData.registrationNumber}
+                          onChange={handleInputChange}
+                          placeholder={formData.registrationCouncil ? COUNCILS[formData.registrationCouncil].numberHint : 'Your practitioner registration number'}
+                          required
+                          minLength={3}
+                          maxLength={40}
+                        />
+                      </div>
+                    </div>
+                  )}
                   
                   <Button 
                     type="submit" 

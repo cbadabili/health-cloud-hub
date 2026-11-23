@@ -21,6 +21,7 @@ import UserManagement from "@/components/admin/UserManagement";
 import SubscriptionManagement from "@/components/admin/SubscriptionManagement";
 import PaymentsModule from "@/components/admin/PaymentsModule";
 import ClaimsMonitoring from "@/components/admin/ClaimsMonitoring";
+import DoctorVerifications from "@/components/admin/DoctorVerifications";
 
 const SuperAdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -95,8 +96,9 @@ const SuperAdminDashboard = () => {
 
       <div className="p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="flex w-full justify-start overflow-x-auto mb-6 md:grid md:grid-cols-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsList className="flex w-full justify-start overflow-x-auto mb-6 md:grid md:grid-cols-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="verifications">Verifications</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -190,6 +192,10 @@ const SuperAdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="verifications">
+            <DoctorVerifications />
           </TabsContent>
 
           <TabsContent value="users">

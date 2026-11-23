@@ -1,15 +1,33 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import SuperAdminDashboard from "@/components/dashboards/SuperAdminDashboard";
 import DoctorDashboard from "@/components/dashboards/DoctorDashboard";
 import PatientDashboard from "@/components/dashboards/PatientDashboard";
+import DoctorVerificationGate from "@/components/doctor/DoctorVerificationGate";
+import type { DoctorVerification } from "@/lib/doctorVerification";
 import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [verification, setVerification] = useState<DoctorVerification | null>(null);
+
+  // Doctors only reach the dashboard once an admin has approved their registration.
+  // (The database enforces this too; this just shows the right screen.)
+  const fetchVerification = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("doctor_verifications")
+      .select("*")
+      .eq("doctor_id", user.id)
+      .maybeSingle();
+    if (error) {
+      console.error("Error fetching verification:", error);
+    }
+    setVerification(data ?? null);
+  }, [user]);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -31,6 +49,9 @@ const Dashboard = () => {
         }
 
         setUserRole(data.role);
+        if (data.role === "doctor") {
+          await fetchVerification();
+        }
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -41,7 +62,7 @@ const Dashboard = () => {
     if (!authLoading) {
       fetchUserRole();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, fetchVerification]);
 
   if (authLoading || loading) {
     return (
@@ -58,7 +79,11 @@ const Dashboard = () => {
     case "super_admin":
       return <SuperAdminDashboard />;
     case "doctor":
-      return <DoctorDashboard />;
+      return verification?.status === "approved" ? (
+        <DoctorDashboard />
+      ) : (
+        <DoctorVerificationGate verification={verification} onChange={fetchVerification} />
+      );
     case "patient":
       return <PatientDashboard />;
     default:
