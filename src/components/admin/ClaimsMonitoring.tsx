@@ -70,20 +70,20 @@ const ClaimsMonitoring = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'approved': return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'rejected': return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
-      case 'under_review': return <Badge className="bg-blue-100 text-blue-800">Under Review</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
+      case 'approved': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Approved</Badge>;
+      case 'rejected': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Rejected</Badge>;
+      case 'under_review': return <Badge className="bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300">Under Review</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="h-4 w-4 text-yellow-600" />;
-      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'rejected': return <XCircle className="h-4 w-4 text-red-600" />;
-      case 'under_review': return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'pending': return <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />;
+      case 'approved': return <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />;
+      case 'rejected': return <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />;
+      case 'under_review': return <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       default: return <FileText className="h-4 w-4" />;
     }
   };
@@ -109,7 +109,7 @@ const ClaimsMonitoring = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                 {stat.change} from last month
               </p>
             </CardContent>
@@ -174,7 +174,7 @@ const ClaimsMonitoring = () => {
                       <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                         Approve
                       </Button>
-                      <Button size="sm" variant="outline" className="text-red-600">
+                      <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400">
                         Reject
                       </Button>
                     </>
@@ -242,14 +242,14 @@ const ClaimsMonitoring = () => {
                   <p className="font-medium">Fastest Processing</p>
                   <p className="text-sm text-muted-foreground">Quickest claim processed</p>
                 </div>
-                <div className="text-2xl font-bold text-green-600">4 hours</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">4 hours</div>
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <p className="font-medium">Claims Pending {"> 7 days"}</p>
                   <p className="text-sm text-muted-foreground">Require immediate attention</p>
                 </div>
-                <div className="text-2xl font-bold text-red-600">12</div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">12</div>
               </div>
             </div>
           </CardContent>

@@ -106,10 +106,10 @@ const PrescriptionManager = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'completed': return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
-      case 'cancelled': return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'active': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Active</Badge>;
+      case 'completed': return <Badge className="bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300">Completed</Badge>;
+      case 'cancelled': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Cancelled</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };

@@ -128,7 +128,7 @@ const TelehealthSession = () => {
                 <Video className="h-5 w-5" />
                 Video Session - {activeSession.profiles?.first_name} {activeSession.profiles?.last_name}
               </div>
-              <Badge className="bg-green-100 text-green-800">Live</Badge>
+              <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Live</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -183,7 +183,7 @@ const TelehealthSession = () => {
                   </CardHeader>
                   <CardContent>
                     <textarea 
-                      className="w-full h-32 p-3 border rounded-lg resize-none"
+                      className="w-full h-32 p-3 border border-input bg-background text-foreground placeholder:text-muted-foreground rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="Add session notes..."
                     />
                     <Button className="mt-2 w-full">Save Notes</Button>

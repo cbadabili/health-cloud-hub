@@ -194,8 +194,8 @@ const MedicalRecords = () => {
                 {currentPrescriptions.map((prescription, index) => (
                   <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <Pill className="h-4 w-4 text-green-600" />
+                      <div className="p-2 bg-green-100 dark:bg-green-500/15 rounded-lg">
+                        <Pill className="h-4 w-4 text-green-600 dark:text-green-400" />
                       </div>
                       <div>
                         <h4 className="font-semibold">{prescription.medication}</h4>

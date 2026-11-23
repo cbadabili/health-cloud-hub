@@ -16,6 +16,7 @@ import {
   LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 import AppointmentScheduler from "@/components/doctor/AppointmentScheduler";
 import PatientRecords from "@/components/doctor/PatientRecords";
 import PrescriptionManager from "@/components/doctor/PrescriptionManager";
@@ -32,28 +33,28 @@ const DoctorDashboard = () => {
       value: "12",
       subtitle: "3 upcoming",
       icon: Calendar,
-      color: "text-blue-600"
+      color: "text-blue-600 dark:text-blue-400"
     },
     {
       title: "Patients Seen",
       value: "8",
       subtitle: "This week: 42",
       icon: Users,
-      color: "text-green-600"
+      color: "text-green-600 dark:text-green-400"
     },
     {
       title: "Prescriptions",
       value: "15",
       subtitle: "5 pending",
       icon: Pill,
-      color: "text-purple-600"
+      color: "text-purple-600 dark:text-purple-400"
     },
     {
       title: "Revenue Today",
       value: "R4,250",
       subtitle: "This month: R128,500",
       icon: DollarSign,
-      color: "text-orange-600"
+      color: "text-orange-600 dark:text-orange-400"
     }
   ];
 
@@ -88,7 +89,8 @@ const DoctorDashboard = () => {
               <Video className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Start Telehealth</span>
             </Button>
-            <Button variant="outline" size="sm" asChild>
+            <ThemeToggle />
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/" aria-label="Home">
                 <Home className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Home</span>
@@ -156,8 +158,8 @@ const DoctorDashboard = () => {
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-1 rounded-full ${
                             appointment.status === 'confirmed' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300' 
+                              : 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300'
                           }`}>
                             {appointment.status}
                           </span>

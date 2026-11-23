@@ -84,10 +84,10 @@ const PaymentHistory = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid': return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'overdue': return <Badge className="bg-red-100 text-red-800">Overdue</Badge>;
-      case 'cancelled': return <Badge className="bg-gray-100 text-gray-800">Cancelled</Badge>;
+      case 'paid': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Paid</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
+      case 'overdue': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Overdue</Badge>;
+      case 'cancelled': return <Badge className="bg-gray-100 dark:bg-muted text-gray-800 dark:text-gray-200">Cancelled</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -118,19 +118,19 @@ const PaymentHistory = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">R{totalPaid.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">R{totalPaid.toFixed(2)}</div>
             <p className="text-sm text-muted-foreground">Total Paid</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600">R{totalOutstanding.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">R{totalOutstanding.toFixed(2)}</div>
             <p className="text-sm text-muted-foreground">Outstanding</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">R{totalOverdue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">R{totalOverdue.toFixed(2)}</div>
             <p className="text-sm text-muted-foreground">Overdue</p>
           </CardContent>
         </Card>
@@ -144,9 +144,9 @@ const PaymentHistory = () => {
 
       {/* Outstanding Bills Alert */}
       {(pendingInvoices.length > 0 || overdueInvoices.length > 0) && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-yellow-800">
+            <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-300">
               <AlertCircle className="h-5 w-5" />
               <div>
                 <p className="font-medium">Outstanding Payments</p>
@@ -243,7 +243,7 @@ const PaymentHistory = () => {
             <CardContent>
               <div className="space-y-4">
                 {pendingInvoices.map((invoice) => (
-                  <div key={invoice.id} className="p-4 border rounded-lg bg-yellow-50">
+                  <div key={invoice.id} className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-500/10">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h4 className="font-semibold">Invoice #{invoice.invoice_number}</h4>
@@ -284,7 +284,7 @@ const PaymentHistory = () => {
             <CardContent>
               <div className="space-y-4">
                 {paidInvoices.map((invoice) => (
-                  <div key={invoice.id} className="p-4 border rounded-lg bg-green-50">
+                  <div key={invoice.id} className="p-4 border rounded-lg bg-green-50 dark:bg-green-500/10">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
                         <h4 className="font-semibold">Invoice #{invoice.invoice_number}</h4>
@@ -292,7 +292,7 @@ const PaymentHistory = () => {
                           Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name} • R{invoice.amount.toFixed(2)}
                         </p>
                         {invoice.paid_date && (
-                          <p className="text-sm text-green-700">
+                          <p className="text-sm text-green-700 dark:text-green-300">
                             Paid: {new Date(invoice.paid_date).toLocaleDateString()}
                           </p>
                         )}
@@ -301,7 +301,7 @@ const PaymentHistory = () => {
                         <Button size="sm" variant="outline">
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Badge className="bg-green-100 text-green-800">Paid</Badge>
+                        <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Paid</Badge>
                       </div>
                     </div>
                   </div>
@@ -328,15 +328,15 @@ const PaymentHistory = () => {
               <CardContent>
                 <div className="space-y-4">
                   {overdueInvoices.map((invoice) => (
-                    <div key={invoice.id} className="p-4 border rounded-lg bg-red-50 border-red-200">
+                    <div key={invoice.id} className="p-4 border rounded-lg bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30">
                       <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                          <h4 className="font-semibold text-red-800">Invoice #{invoice.invoice_number}</h4>
-                          <p className="text-sm text-red-700">
+                          <h4 className="font-semibold text-red-800 dark:text-red-300">Invoice #{invoice.invoice_number}</h4>
+                          <p className="text-sm text-red-700 dark:text-red-300">
                             Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name} • R{invoice.amount.toFixed(2)}
                           </p>
                           {invoice.due_date && (
-                            <p className="text-sm text-red-700">
+                            <p className="text-sm text-red-700 dark:text-red-300">
                               Was due: {new Date(invoice.due_date).toLocaleDateString()}
                             </p>
                           )}

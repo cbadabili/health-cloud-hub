@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Auth = () => {
   const { user } = useAuth();
@@ -136,7 +137,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">

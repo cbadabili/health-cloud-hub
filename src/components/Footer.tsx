@@ -2,7 +2,7 @@ import { Stethoscope, Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-medical-dark text-gray-300 py-16">
+    <footer className="bg-[hsl(210_11%_15%)] text-gray-300 py-16 dark:bg-card dark:border-t dark:border-border">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Brand */}

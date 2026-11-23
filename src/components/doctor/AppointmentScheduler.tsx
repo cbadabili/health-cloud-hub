@@ -104,10 +104,10 @@ const AppointmentScheduler = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'scheduled': return <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>;
-      case 'completed': return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'cancelled': return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
-      case 'no_show': return <Badge className="bg-gray-100 text-gray-800">No Show</Badge>;
+      case 'scheduled': return <Badge className="bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300">Scheduled</Badge>;
+      case 'completed': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Completed</Badge>;
+      case 'cancelled': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Cancelled</Badge>;
+      case 'no_show': return <Badge className="bg-gray-100 dark:bg-muted text-gray-800 dark:text-gray-200">No Show</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };

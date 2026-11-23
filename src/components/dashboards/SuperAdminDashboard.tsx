@@ -16,6 +16,7 @@ import {
   LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 import UserManagement from "@/components/admin/UserManagement";
 import SubscriptionManagement from "@/components/admin/SubscriptionManagement";
 import PaymentsModule from "@/components/admin/PaymentsModule";
@@ -32,28 +33,28 @@ const SuperAdminDashboard = () => {
       value: "2,847",
       change: "+12%",
       icon: Users,
-      color: "text-blue-600"
+      color: "text-blue-600 dark:text-blue-400"
     },
     {
       title: "Monthly Revenue",
       value: "R284,750",
       change: "+8.2%",
       icon: DollarSign,
-      color: "text-green-600"
+      color: "text-green-600 dark:text-green-400"
     },
     {
       title: "Active Claims",
       value: "1,247",
       change: "+23%",
       icon: FileText,
-      color: "text-orange-600"
+      color: "text-orange-600 dark:text-orange-400"
     },
     {
       title: "Growth Rate",
       value: "15.8%",
       change: "+2.4%",
       icon: TrendingUp,
-      color: "text-purple-600"
+      color: "text-purple-600 dark:text-purple-400"
     }
   ];
 
@@ -77,7 +78,8 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" asChild>
+            <ThemeToggle />
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/" aria-label="Home">
                 <Home className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Home</span>
@@ -114,7 +116,7 @@ const SuperAdminDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                    <p className="text-xs text-green-600 mt-1">
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                       {stat.change} from last month
                     </p>
                   </CardContent>
