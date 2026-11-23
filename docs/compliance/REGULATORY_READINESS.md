@@ -1,55 +1,163 @@
-# Regulatory Readiness Baseline (US Healthcare)
+# Regulatory Readiness: POPIA (South Africa) & DPA (Botswana)
 
-This document captures **frontend-level** controls that support US healthcare deployments.
-It is not legal advice and is not a substitute for a formal HIPAA/HITECH assessment.
+**Status:** working baseline, last reviewed 23 November 2026.
+**This is not legal advice.** It maps what the codebase does today against
+the main data-protection obligations for a health platform serving South
+Africa and Botswana, so we know what is done and what is left. Points marked
+**[verify]** come from secondary sources that disagree or that we could not
+check against the official text. Confirm them with counsel before relying on
+them.
 
-## Scope
+> **Claims rule:** until the "Before claiming compliance" list below is
+> complete, public copy may say "built for POPIA & DPA" or "with POPIA & DPA
+> in mind", but **not** "POPIA compliant" or "DPA compliant".
 
-- Repository: `health-cloud-hub`
-- Layer: Browser frontend + deployment headers
-- Out of scope: BAA contracts, cloud tenancy controls, SOC 2 evidence, incident response operations, and policy/legal approvals.
+---
 
-## Implemented Technical Controls
+## 1. Laws in scope
 
-### 1) Authentication & Session Hardening
+| Law | Applies to | Notes |
+|---|---|---|
+| **Protection of Personal Information Act 4 of 2013 (POPIA)**, South Africa | Personal information of South African patients, doctors and staff | Health information is *special personal information* (s 26). |
+| **POPIA Regulations on the processing of health information** | Health data under POPIA | Published in Government Gazette No. 54268 and in force from **6 March 2026**, with no grace period. They give more detailed rules under s 32(6). |
+| **National Health Act 61 of 2003 (s 14) and HPCSA guidelines**, including telehealth | SA healthcare providers using the platform | Confidentiality of patient records. Where the POPIA s 32 healthcare exemption applies, providers remain bound by these. |
+| **Data Protection Act, 2024 (Act No. 18 of 2024), Botswana ("DPA")** | Personal data of people in Botswana | Commenced **14 January 2025**. The Information and Data Protection Commission (IDPC) continues as regulator. Sources say it replaces the 2018 Act **[verify that the 2018 Act was expressly repealed]**. |
+| Medical Schemes Act 131 of 1998 (SA) | PMB claims features | Relevant once claims processing is real; out of scope for this baseline. |
 
-- Supabase URL/key are required from environment variables; no development fallback credentials in source.
-- Session storage uses `sessionStorage` to reduce persistence of sensitive auth artifacts across browser restarts.
-- Route-level guard blocks unauthenticated access to `/dashboard`.
+## 2. Our role under each law **[verify with counsel]**
 
-### 2) Secure-by-default Input & Account UX
+The legal role decides who carries which obligation, and it affects contracts.
 
-- Sign-up password policy enforces 12+ chars with uppercase, lowercase, number, and symbol.
-- Generic account-creation error messaging reduces leakage of backend validation details.
+- **Practices (doctors, clinics)** decide why and how patient health data is
+  processed. They are most likely the **responsible party** (POPIA) or
+  **controller** (DPA) for patient records.
+- **Clinithetics** stores and processes that data for them, so for that data
+  it is most likely an **operator** (POPIA) or **processor** (DPA). That
+  requires a written agreement with each practice covering security
+  (POPIA s 20–21).
+- **But** patients and doctors also sign up directly with Clinithetics, and we
+  hold account, billing and subscription data in our own right. For that data
+  Clinithetics is a **responsible party / controller**, with the full set of
+  obligations.
 
-### 3) Browser Security Headers (Vercel)
+---
 
-- HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, and baseline `Content-Security-Policy` are configured.
+## 3. What the code already does
 
-## Regulatory Mapping (High-Level)
+| Control | Where | Notes |
+|---|---|---|
+| Authentication required for the app | `ProtectedRoute.tsx`, Supabase Auth | `/dashboard` redirects unauthenticated users to `/auth`. |
+| Session kept in `sessionStorage` | `src/integrations/supabase/client.ts` | Login is cleared when the browser closes. |
+| No credentials in source | Supabase client | URL and anon key come from env vars. |
+| Strong password policy | `src/pages/Auth.tsx` | 12+ characters, mixed case, a number and a symbol. |
+| **Row-Level Security on all 8 data tables** | `supabase/migrations/20250708151353-*.sql` | `profiles`, `user_roles`, `doctor_profiles`, `patient_profiles`, `appointments`, `medical_records`, `prescriptions`, `invoices` all have RLS enabled, with policies scoping patients to their own rows and doctors to their own patients. |
+| HTTPS and browser security headers | `vercel.json` | HSTS (2 years, preload), CSP, `X-Frame-Options: DENY`, `nosniff`, Referrer-Policy, Permissions-Policy. |
+| Generic sign-up errors | `src/pages/Auth.tsx` | Avoids revealing whether an account exists. |
 
-| Regulatory expectation | Implemented in this repo | Notes |
-| --- | --- | --- |
-| HIPAA Security Rule - Access control (45 CFR §164.312(a)) | Partial | Auth + protected routes present; enforce RLS and role checks in Supabase DB policies.
-| HIPAA Security Rule - Transmission security (45 CFR §164.312(e)) | Partial | HTTPS assumed via hosting + HSTS header; verify TLS configuration and cert lifecycle operationally.
-| HIPAA Security Rule - Integrity controls (45 CFR §164.312(c)) | Partial | Client-side constraints only; integrity must be enforced server-side and DB-side.
-| HIPAA Security Rule - Audit controls (45 CFR §164.312(b)) | Gap | Implement centralized audit logging and immutable retention outside frontend.
-| HIPAA Privacy Rule - Minimum necessary | Partial | Role-specific dashboards exist; verify backend field-level access restrictions.
-| Breach notification readiness | Gap | Requires organizational incident response and legal workflow.
+---
 
-## Remaining Actions Before Claiming Compliance
+## 4. Requirement map
 
-1. Execute a formal HIPAA risk analysis and management plan.
-2. Verify and enforce Supabase Row Level Security for all PHI tables.
-3. Add immutable audit logs for auth, record access, record export, and admin actions.
-4. Implement consent management and patient disclosures workflows.
-5. Add automated dependency + SAST/DAST scanning in CI.
-6. Add disaster recovery drills, backup verification, and retention policy evidence.
-7. Validate accessibility (WCAG 2.1 AA) with manual assistive-tech testing.
-8. Run production load/performance testing with SLO thresholds.
+Status: ✅ in place · 🟡 partial · ❌ gap
 
-## Verification Commands (executed locally)
+POPIA section numbers are given. DPA section numbers are left out where
+sources disagree **[verify]**.
 
-- `npm run lint`
-- `npm run build`
+| Obligation | POPIA | DPA (Botswana) | Status | What exists / what's missing |
+|---|---|---|---|---|
+| **Lawful basis for health data** | s 11; s 26 prohibition with s 32 exemption for healthcare providers; 2026 health regulations | Sensitive data is prohibited by default, with listed conditions that allow it **[verify that health data is listed]** | 🟡 | The platform assumes practices process under the healthcare exemption. There is no record of which basis applies per practice, and no patient consent capture. |
+| **Purpose & minimality** | s 10, 13, 15 | Purpose limitation & minimisation | 🟡 | Role-based dashboards limit what each role sees. No documented purposes, and some fields are broader than needed (e.g. free-text medical history). |
+| **Openness / privacy notice** | s 17–18 | Transparency duties | ❌ | No privacy policy or patient notice. The footer "Privacy Policy" link goes nowhere. |
+| **Access control** | s 19 | Security safeguards | 🟡 | RLS is enabled. **But see the critical issue in §5:** users can grant themselves `super_admin` at sign-up. Doctors are not verified against HPCSA or BHPC registers. |
+| **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest is handled by the database host **[confirm on our Supabase plan]**. No field-level encryption for clinical notes. |
+| **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | ❌ | No logging of who viewed, changed or exported a record. |
+| **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Supabase, Vercel). |
+| **Breach notification** | s 22: Regulator and data subjects "as soon as reasonably possible". Reported through the Information Regulator's eServices portal (mandatory since 1 April 2025). | Notify the IDPC within **72 hours** of becoming aware, unless the breach is unlikely to create a risk; notify affected people without undue delay **[verify]** | ❌ | No incident response plan, owner or contact list. |
+| **Data subject rights (access, correction, deletion)** | s 23–25 | Access, rectification, erasure, objection | 🟡 | Patients can view their records in the portal. No export, correction request or deletion flow. |
+| **Retention & deletion** | s 14 | Storage limitation | ❌ | No retention periods or automatic deletion. Note: health record retention rules (e.g. HPCSA guidance) may require keeping records for years. Define per record type. |
+| **Information Officer / DPO** | s 55–56: register the Information Officer with the Information Regulator | A DPO is required for large-scale processing of sensitive data; sources disagree on whether to register or notify the IDPC **[verify]** | ❌ | No named officer for either country. |
+| **Cross-border transfers** | s 72. Prior authorisation (s 57) may be needed to send special personal information to a country without adequate protection. | Transfers outside Botswana are restricted. Sources say **a copy must remain in Botswana**, and sensitive data may need prior Commission approval **[verify]** | ❌ | **Hosting region unknown.** If Supabase or Vercel store data outside SA or Botswana, these rules apply. The Botswana copy requirement could need an in-country replica. |
+| **Accountability / documentation** | s 8 | Accountability | ❌ | No processing register, risk assessment or policies. |
 
+---
+
+## 5. Critical issues to fix first
+
+### 5.1 Anyone can sign up as `super_admin` 🔴
+`supabase/migrations/20250711072229-*.sql` (`handle_new_user`) sets the new
+user's role straight from sign-up metadata:
+
+```sql
+COALESCE((NEW.raw_user_meta_data->>'role')::public.app_role, 'patient')
+```
+
+The website only offers "patient" or "doctor", but the metadata is
+client-controlled. Anyone with the public anon key can call `signUp` with
+`role: 'super_admin'` and get the "Super admins can manage all …" RLS
+policies, which means full read and write access to every patient's records.
+
+**Fix:** only accept `patient` or `doctor` from sign-up. Anything else becomes
+`patient`. Assign `super_admin` only by hand or through a privileged server
+function. Then audit existing `user_roles` rows for unexpected
+`super_admin` entries.
+
+### 5.2 Doctors are not verified 🟠
+Any sign-up can choose "doctor". A doctor account can create medical records
+and see the profiles of patients who booked with them. Verify registration
+(HPCSA in SA, BHPC in Botswana) before activating doctor accounts, or use an
+admin approval step.
+
+### 5.3 Telehealth is blocked by our own headers 🟡
+`vercel.json` sets `Permissions-Policy: camera=(), microphone=()`, which stops
+the browser from using the camera and microphone. Video consultations cannot
+work until this is relaxed to `camera=(self)` and `microphone=(self)` (plus the
+video provider's origin in the CSP).
+
+---
+
+## 6. Before claiming compliance
+
+Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
+1. Fix the `super_admin` sign-up hole (§5.1) and audit existing roles.
+2. Add doctor verification or admin approval (§5.2).
+3. Add an append-only audit log for record views, edits, exports and admin
+   actions.
+4. Build patient data rights flows: export, correction request, deletion
+   request.
+5. Add a consent and notice step at patient sign-up, linked to a real privacy
+   policy.
+6. Add retention rules per record type and scheduled deletion.
+7. Add dependency scanning and SAST to CI.
+
+Founder / legal:
+1. Confirm our role (operator/processor vs responsible party/controller) for
+   each kind of data.
+2. **Find out where data is hosted** (Supabase project region, Vercel
+   functions/logs). Decide on SA and Botswana data residency. Check the
+   Botswana "copy must remain in Botswana" rule.
+3. Sign data processing agreements with Supabase and Vercel. Create a
+   template operator agreement for practices.
+4. Appoint and register an Information Officer (SA) and a DPO (Botswana).
+5. Write the privacy policy, PAIA manual (SA), breach response plan (with
+   72-hour DPA and "as soon as reasonably possible" POPIA timelines) and
+   processing register.
+6. Run a formal risk / data protection impact assessment against the 2026
+   POPIA health regulations and the DPA.
+
+---
+
+## 7. Sources
+
+Secondary sources used for this update. Check them against the official
+gazettes before relying on specifics.
+
+- Botswana DPA 2024: [Government Gazette, 29 Oct 2024 (Act text)](https://www.dpo-india.com/Resources/privacy_laws_in_africa_nations/Botswana's-Data-Protection-Act,2024.pdf) · [Botswana Laws: Act 18 of 2024](https://testelaws.botswanalaws.com/act-bulletin-2024/act-18-of-2024-data-protection-act/) · [CIPIT: 2018 vs 2024 Acts](https://cipit.strathmore.edu/understanding-botswanas-2018-and-2024-data-protection-acts/) · [Michalsons: Botswana DPA in effect](https://www.michalsons.com/blog/botswanas-data-protection-act-grace-period-extended/60775) · [Bowmans Africa Guide: Data Protection 2025](https://bowmanslaw.com/wp-content/uploads/2025/07/Africa-Guide-Data-Protection-2025_07.pdf) · [Minchin & Kelly](https://www.minchinkelly.bw/2025/08/18/botswana-africa-data-protection-regulatory-frameworks/)
+- POPIA health regulations 2026: [Bowmans: regulations cross the finish line](https://bowmanslaw.com/insights/south-africa-popia-health-information-regulations-cross-the-finish-line/) · [Fasken: health data under the microscope](https://www.fasken.com/en/knowledge/2026/04/health-data-under-the-microscope-new-popia-regulations) · [Eversheds Sutherland](https://www.eversheds-sutherland.com/en/south-africa/insights/new-popia-regulations-processing-of-health-information) · [Moonstone: now in force](https://www.moonstone.co.za/new-popia-regulations-on-health-information-now-in-force/)
+- POPIA and healthcare generally: [Werksmans: processing healthcare information](https://www.werksmans.com/legal-updates-and-opinions/the-legal-and-ethical-processing-of-healthcare-information/) · [Clyde & Co: POPIA in SA healthcare](https://www.clydeco.com/en/insights/2022/05/cyber-and-popia-in-the-healthcare-industry)
+
+## 8. Verification commands
+
+```bash
+npm run lint
+npm run build
+```
