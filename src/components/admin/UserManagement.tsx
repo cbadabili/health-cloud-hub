@@ -110,8 +110,8 @@ const UserManagement = () => {
             </Button>
           </div>
 
-          <div className="border rounded-lg">
-            <div className="grid grid-cols-5 gap-4 p-4 bg-muted font-medium text-sm">
+          <div className="border rounded-lg overflow-x-auto">
+            <div className="grid grid-cols-5 gap-4 p-4 min-w-[44rem] bg-muted font-medium text-sm">
               <div>Name</div>
               <div>Email</div>
               <div>Role</div>
@@ -119,7 +119,7 @@ const UserManagement = () => {
               <div>Actions</div>
             </div>
             {filteredUsers.map((user) => (
-              <div key={user.id} className="grid grid-cols-5 gap-4 p-4 border-t hover:bg-muted/50">
+              <div key={user.id} className="grid grid-cols-5 gap-4 p-4 min-w-[44rem] border-t hover:bg-muted/50">
                 <div className="font-medium">
                   {user.first_name && user.last_name 
                     ? `${user.first_name} ${user.last_name}`

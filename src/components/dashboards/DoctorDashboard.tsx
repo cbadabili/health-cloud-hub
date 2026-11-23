@@ -23,6 +23,7 @@ import TelehealthSession from "@/components/doctor/TelehealthSession";
 
 const DoctorDashboard = () => {
   const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.last_name || user?.email?.split('@')[0] || "there";
   const [activeTab, setActiveTab] = useState("overview");
 
   const todayStats = [
@@ -79,7 +80,7 @@ const DoctorDashboard = () => {
             </Link>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Doctor Dashboard</h1>
-              <p className="text-sm text-muted-foreground truncate">Welcome back, Dr. {user?.email?.split('@')[0]}</p>
+              <p className="text-sm text-muted-foreground truncate">Welcome back, Dr. {displayName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -113,7 +114,7 @@ const DoctorDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {todayStats.map((stat, index) => (
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

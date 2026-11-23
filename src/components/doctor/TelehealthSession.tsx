@@ -244,7 +244,7 @@ const TelehealthSession = () => {
               ) : (
                 <div className="space-y-4">
                   {todayAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
                           {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
@@ -292,7 +292,7 @@ const TelehealthSession = () => {
               ) : (
                 <div className="space-y-4">
                   {upcomingAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <div className="text-sm font-medium">
@@ -334,7 +334,7 @@ const TelehealthSession = () => {
             <CardContent>
               <div className="space-y-4">
                 {appointments.map((appointment) => (
-                  <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="text-center">
                         <div className="text-sm font-medium">

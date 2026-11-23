@@ -179,7 +179,7 @@ const AppointmentBooking = () => {
         <CardContent>
           <div className="space-y-4">
             {upcomingAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <User className="h-5 w-5 text-primary" />
@@ -187,7 +187,7 @@ const AppointmentBooking = () => {
                   <div>
                     <h4 className="font-semibold">{appointment.doctor}</h4>
                     <p className="text-sm text-muted-foreground">{appointment.specialty}</p>
-                    <div className="flex items-center gap-4 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="h-3 w-3" />
                         {new Date(appointment.date).toLocaleDateString()}

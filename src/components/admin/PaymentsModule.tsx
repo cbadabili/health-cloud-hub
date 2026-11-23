@@ -186,7 +186,7 @@ const PaymentsModule = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
               <div>
                 <p className="font-medium">Dr. Sarah Chen</p>
                 <p className="text-sm text-muted-foreground">March 2024 consultations</p>
@@ -197,7 +197,7 @@ const PaymentsModule = () => {
               </div>
               <Button size="sm">Process Payout</Button>
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
               <div>
                 <p className="font-medium">Dr. Michael Rodriguez</p>
                 <p className="text-sm text-muted-foreground">March 2024 consultations</p>

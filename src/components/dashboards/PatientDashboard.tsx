@@ -23,6 +23,7 @@ import TelehealthAccess from "@/components/patient/TelehealthAccess";
 
 const PatientDashboard = () => {
   const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "there";
   const [activeTab, setActiveTab] = useState("overview");
 
   const healthStats = [
@@ -85,7 +86,7 @@ const PatientDashboard = () => {
             </Link>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Patient Portal</h1>
-              <p className="text-sm text-muted-foreground truncate">Welcome back, {user?.email?.split('@')[0]}</p>
+              <p className="text-sm text-muted-foreground truncate">Welcome back, {displayName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -119,7 +120,7 @@ const PatientDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Health Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {healthStats.map((stat, index) => (
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

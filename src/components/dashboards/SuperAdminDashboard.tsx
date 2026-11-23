@@ -23,6 +23,7 @@ import ClaimsMonitoring from "@/components/admin/ClaimsMonitoring";
 
 const SuperAdminDashboard = () => {
   const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "there";
   const [activeTab, setActiveTab] = useState("overview");
 
   const stats = [
@@ -72,7 +73,7 @@ const SuperAdminDashboard = () => {
             </Link>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Super Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground truncate">Welcome back, {user?.email}</p>
+              <p className="text-sm text-muted-foreground truncate">Welcome back, {displayName}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">

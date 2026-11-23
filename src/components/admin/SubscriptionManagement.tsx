@@ -68,8 +68,8 @@ const SubscriptionManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg">
-            <div className="grid grid-cols-6 gap-4 p-4 bg-muted font-medium text-sm">
+          <div className="border rounded-lg overflow-x-auto">
+            <div className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] bg-muted font-medium text-sm">
               <div>User</div>
               <div>Plan</div>
               <div>Status</div>
@@ -78,7 +78,7 @@ const SubscriptionManagement = () => {
               <div>Actions</div>
             </div>
             {subscriptions.map((subscription, index) => (
-              <div key={index} className="grid grid-cols-6 gap-4 p-4 border-t hover:bg-muted/50">
+              <div key={index} className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] border-t hover:bg-muted/50">
                 <div className="font-medium">{subscription.user}</div>
                 <div>{getPlanBadge(subscription.plan)}</div>
                 <div>{getStatusBadge(subscription.status)}</div>

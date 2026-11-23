@@ -146,7 +146,7 @@ const AppointmentScheduler = () => {
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{todayAppointments.length}</div>
@@ -184,7 +184,7 @@ const AppointmentScheduler = () => {
           <TabsTrigger value="all">All Appointments</TabsTrigger>
         </TabsList>
 
-        <div className="flex gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
             <Input
@@ -216,7 +216,7 @@ const AppointmentScheduler = () => {
               ) : (
                 <div className="space-y-4">
                   {todayAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
                           {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
@@ -278,7 +278,7 @@ const AppointmentScheduler = () => {
               ) : (
                 <div className="space-y-4">
                   {upcomingAppointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <div className="text-sm font-medium">
@@ -323,8 +323,8 @@ const AppointmentScheduler = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg">
-                <div className="grid grid-cols-6 gap-4 p-4 bg-muted font-medium text-sm">
+              <div className="border rounded-lg overflow-x-auto">
+                <div className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] bg-muted font-medium text-sm">
                   <div>Date & Time</div>
                   <div>Patient</div>
                   <div>Type</div>
@@ -333,7 +333,7 @@ const AppointmentScheduler = () => {
                   <div>Actions</div>
                 </div>
                 {filteredAppointments.map((appointment) => (
-                  <div key={appointment.id} className="grid grid-cols-6 gap-4 p-4 border-t hover:bg-muted/50">
+                  <div key={appointment.id} className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] border-t hover:bg-muted/50">
                     <div className="text-sm">
                       <div>{new Date(appointment.appointment_date).toLocaleDateString()}</div>
                       <div className="text-muted-foreground">

@@ -175,7 +175,7 @@ const PatientRecords = () => {
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{myPatients.length}</div>
@@ -221,7 +221,7 @@ const PatientRecords = () => {
           <TabsTrigger value="patients">My Patients</TabsTrigger>
         </TabsList>
 
-        <div className="flex gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
             <Input

@@ -139,7 +139,7 @@ const PrescriptionManager = () => {
   return (
     <div className="space-y-6">
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{activePrescriptions.length}</div>
@@ -177,7 +177,7 @@ const PrescriptionManager = () => {
           <TabsTrigger value="all">All Prescriptions</TabsTrigger>
         </TabsList>
 
-        <div className="flex gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
             <Input
@@ -259,7 +259,7 @@ const PrescriptionManager = () => {
             <CardContent>
               <div className="space-y-4">
                 {recentPrescriptions.map((prescription) => (
-                  <div key={prescription.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={prescription.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{prescription.medication_name}</h4>
@@ -297,8 +297,8 @@ const PrescriptionManager = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg">
-                <div className="grid grid-cols-6 gap-4 p-4 bg-muted font-medium text-sm">
+              <div className="border rounded-lg overflow-x-auto">
+                <div className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] bg-muted font-medium text-sm">
                   <div>Date</div>
                   <div>Patient</div>
                   <div>Medication</div>
@@ -307,7 +307,7 @@ const PrescriptionManager = () => {
                   <div>Actions</div>
                 </div>
                 {filteredPrescriptions.map((prescription) => (
-                  <div key={prescription.id} className="grid grid-cols-6 gap-4 p-4 border-t hover:bg-muted/50">
+                  <div key={prescription.id} className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] border-t hover:bg-muted/50">
                     <div className="text-sm">
                       {new Date(prescription.created_at).toLocaleDateString()}
                     </div>
