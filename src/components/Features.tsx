@@ -64,8 +64,8 @@ const Features = () => {
     },
     {
       icon: Shield,
-      title: "HIPAA Compliance",
-      description: "Bank-level security with encrypted data and audit trails.",
+      title: "POPIA & DPA Ready",
+      description: "Built around POPIA and DPA data-protection principles, with encrypted connections and role-based access.",
       color: "bg-medical-light-blue",
       iconColor: "text-medical-blue",
       route: "/auth"

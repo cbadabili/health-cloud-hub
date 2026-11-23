@@ -46,8 +46,8 @@ const Header = () => {
             <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
               Pricing
             </a>
-            <a href="#testimonials" className="text-foreground hover:text-primary transition-colors">
-              Testimonials
+            <a href="#who-its-for" className="text-foreground hover:text-primary transition-colors">
+              Who It's For
             </a>
           </nav>
 
@@ -110,8 +110,8 @@ const Header = () => {
               <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
                 Pricing
               </a>
-              <a href="#testimonials" className="text-foreground hover:text-primary transition-colors">
-                Testimonials
+              <a href="#who-its-for" className="text-foreground hover:text-primary transition-colors">
+                Who It's For
               </a>
               <div className="flex flex-col gap-2 mt-4">
                 <ThemeToggle showLabel />
