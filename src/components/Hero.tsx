@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Shield, Clock, Users, ArrowRight } from "lucide-react";
+import { Shield, MapPin, LayoutGrid, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Hero = () => {
@@ -16,7 +16,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-medical-light-blue border border-medical-blue/20 rounded-full px-4 py-2 mb-8">
             <Shield className="h-4 w-4 text-medical-blue" />
-            <span className="text-sm font-medium text-medical-blue">HIPAA Compliant & Secure</span>
+            <span className="text-sm font-medium text-medical-blue">Built for POPIA & DPA</span>
           </div>
 
           {/* Main Heading */}
@@ -51,24 +51,24 @@ const Hero = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
             <div className="flex flex-col items-center text-center">
               <div className="p-3 bg-medical-light-green rounded-xl mb-4">
-                <Users className="h-8 w-8 text-medical-green" />
+                <MapPin className="h-8 w-8 text-medical-green" />
               </div>
-              <h3 className="font-semibold text-medical-dark mb-2">10,000+ Users</h3>
-              <p className="text-medical-gray text-sm">Trusted by healthcare professionals</p>
+              <h3 className="font-semibold text-medical-dark mb-2">Built for Southern Africa</h3>
+              <p className="text-medical-gray text-sm">Rand pricing, PMB claims, and POPIA & DPA in mind</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="p-3 bg-medical-light-blue rounded-xl mb-4">
                 <Shield className="h-8 w-8 text-medical-blue" />
               </div>
-              <h3 className="font-semibold text-medical-dark mb-2">100% Secure</h3>
-              <p className="text-medical-gray text-sm">Bank-level encryption & HIPAA compliant</p>
+              <h3 className="font-semibold text-medical-dark mb-2">Secure by Design</h3>
+              <p className="text-medical-gray text-sm">Encrypted connections and role-based access</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="p-3 bg-medical-light-green rounded-xl mb-4">
-                <Clock className="h-8 w-8 text-medical-green" />
+                <LayoutGrid className="h-8 w-8 text-medical-green" />
               </div>
-              <h3 className="font-semibold text-medical-dark mb-2">Save 5+ Hours</h3>
-              <p className="text-medical-gray text-sm">Daily admin time saved per doctor</p>
+              <h3 className="font-semibold text-medical-dark mb-2">One Platform</h3>
+              <p className="text-medical-gray text-sm">Scheduling, records, billing and telehealth together</p>
             </div>
           </div>
         </div>

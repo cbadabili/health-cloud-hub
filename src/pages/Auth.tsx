@@ -348,7 +348,7 @@ const Auth = () => {
         <p className="text-center text-sm text-medical-gray mt-6">
           By signing up, you agree to our Terms of Service and Privacy Policy.
           <br />
-          Your data is protected with HIPAA-compliant security.
+          Built with POPIA and DPA data-protection requirements in mind.
         </p>
       </div>
     </div>

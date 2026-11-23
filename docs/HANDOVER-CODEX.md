@@ -109,11 +109,12 @@ soon" tooltip.** Buttons that do nothing when clicked damage trust.
 - Icon-only buttons in `doctor/`, `patient/` and `admin/` components need an
   `aria-label`.
 
-### 5. For the founder to decide (don't change without sign-off)
-- Landing-page claims in `Hero.tsx` / `Testimonials.tsx` ("10,000+ users",
-  "100% Secure", named testimonials) must be true or removed.
-- The site says "HIPAA compliant"; for South Africa the relevant law is
-  POPIA. See `docs/compliance/REGULATORY_READINESS.md`.
+### 5. Landing-page claims (done, for reference)
+The unverifiable claims ("10,000+ users", "100% Secure", named testimonials)
+were removed, and HIPAA wording was replaced with POPIA & DPA. Copy says
+"built for" / "in mind", **not** "compliant": audit logging and a formal risk
+assessment are still open (see `docs/compliance/REGULATORY_READINESS.md`).
+Don't add compliance, user-count or testimonial claims without sign-off.
 
 ---
 

@@ -56,7 +56,7 @@ const Footer = () => {
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">Contact Support</a></li>
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">Training</a></li>
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">System Status</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">HIPAA Compliance</a></li>
+              <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">POPIA & DPA</a></li>
             </ul>
           </div>
         </div>
