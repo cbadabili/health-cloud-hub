@@ -82,7 +82,8 @@ const DoctorVerificationGate = ({ verification, onChange }: DoctorVerificationGa
     }
 
     // The database sets the status to "pending"; doctors cannot approve themselves.
-    const row = { ...details, certificate_path };
+    // certificate_path is only sent when a new file was uploaded.
+    const row = newFile ? { ...details, certificate_path } : details;
     const { error } = verification
       ? await supabase.from("doctor_verifications").update(row).eq("doctor_id", user.id)
       : await supabase.from("doctor_verifications").insert({ doctor_id: user.id, ...row });
