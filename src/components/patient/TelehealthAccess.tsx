@@ -175,7 +175,7 @@ const TelehealthAccess = () => {
         <CardContent>
           <div className="space-y-4">
             {upcomingTelehealthAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+              <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <Video className="h-5 w-5 text-blue-600" />
@@ -183,7 +183,7 @@ const TelehealthAccess = () => {
                   <div>
                     <h4 className="font-semibold">{appointment.doctor}</h4>
                     <p className="text-sm text-muted-foreground">{appointment.specialty}</p>
-                    <div className="flex items-center gap-4 mt-1 text-sm">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {new Date(appointment.date).toLocaleDateString()}
@@ -230,7 +230,7 @@ const TelehealthAccess = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 items-end">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium mb-2">Meeting ID</label>
               <input

@@ -3,15 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Calendar, 
-  FileText, 
-  Pill, 
+import {
+  Calendar,
+  FileText,
+  Pill,
   Video,
   DollarSign,
   Heart,
   Clock,
-  User
+  User,
+  Home,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppointmentBooking from "@/components/patient/AppointmentBooking";
@@ -21,6 +23,7 @@ import TelehealthAccess from "@/components/patient/TelehealthAccess";
 
 const PatientDashboard = () => {
   const { user, signOut } = useAuth();
+  const displayName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || "there";
   const [activeTab, setActiveTab] = useState("overview");
 
   const healthStats = [
@@ -71,38 +74,43 @@ const PatientDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Link 
               to="/" 
-              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity"
+              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity shrink-0"
+              aria-label="Go to home page"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <User className="h-6 w-6 text-primary-foreground" />
             </Link>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Patient Portal</h1>
-              <p className="text-sm text-muted-foreground">Welcome back, {user?.email?.split('@')[0]}</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Patient Portal</h1>
+              <p className="text-sm text-muted-foreground truncate">Welcome back, {displayName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")}>
-              <Video className="h-4 w-4 mr-2" />
-              Join Telehealth
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")} aria-label="Join Telehealth">
+              <Video className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Join Telehealth</span>
             </Button>
-            <Button variant="outline" asChild>
-              <Link to="/">Home</Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/" aria-label="Home">
+                <Home className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
             </Button>
-            <Button variant="outline" onClick={signOut}>
-              Sign Out
+            <Button variant="outline" size="sm" onClick={signOut} aria-label="Sign out">
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="flex w-full justify-start overflow-x-auto mb-6 md:grid md:grid-cols-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="appointments">Appointments</TabsTrigger>
             <TabsTrigger value="records">Medical Records</TabsTrigger>
@@ -112,7 +120,7 @@ const PatientDashboard = () => {
 
           <TabsContent value="overview" className="space-y-6">
             {/* Health Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {healthStats.map((stat, index) => (
                 <Card key={index}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

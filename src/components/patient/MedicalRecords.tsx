@@ -75,7 +75,7 @@ const MedicalRecords = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="records" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="flex w-full md:grid md:grid-cols-4">
           <TabsTrigger value="records">Visit Records</TabsTrigger>
           <TabsTrigger value="prescriptions">Prescriptions</TabsTrigger>
           <TabsTrigger value="summary">Health Summary</TabsTrigger>
@@ -94,14 +94,14 @@ const MedicalRecords = () => {
               <div className="space-y-4">
                 {medicalRecords.map((record) => (
                   <div key={record.id} className="border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg">
                           <FileText className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <h4 className="font-semibold">{record.diagnosis}</h4>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Calendar className="h-3 w-3" />
                               {new Date(record.date).toLocaleDateString()}
@@ -192,7 +192,7 @@ const MedicalRecords = () => {
             <CardContent>
               <div className="space-y-4">
                 {currentPrescriptions.map((prescription, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-green-100 rounded-lg">
                         <Pill className="h-4 w-4 text-green-600" />
@@ -273,7 +273,7 @@ const MedicalRecords = () => {
                   { name: "Vaccination Record", type: "PDF", date: "2023-08-20" },
                   { name: "MRI Scan Results", type: "PDF", date: "2023-06-10" }
                 ].map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                  <div key={index} className="flex flex-wrap items-center justify-between gap-3 p-3 border border-border rounded-lg">
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-muted-foreground" />
                       <div>

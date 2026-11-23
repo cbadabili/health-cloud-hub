@@ -116,7 +116,7 @@ const Pricing = () => {
                 className="w-full group"
                 asChild
               >
-                <Link to="/auth">
+                <Link to="/auth?mode=signup&role=doctor">
                   {plan.cta}
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
