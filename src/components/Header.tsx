@@ -37,16 +37,16 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
+            <a href="/#features" className="text-foreground hover:text-primary transition-colors">
               Features
             </a>
-            <a href="#how-it-works" className="text-foreground hover:text-primary transition-colors">
+            <a href="/#how-it-works" className="text-foreground hover:text-primary transition-colors">
               How It Works
             </a>
-            <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
+            <a href="/#pricing" className="text-foreground hover:text-primary transition-colors">
               Pricing
             </a>
-            <a href="#who-its-for" className="text-foreground hover:text-primary transition-colors">
+            <a href="/#who-its-for" className="text-foreground hover:text-primary transition-colors">
               Who It's For
             </a>
           </nav>
@@ -101,16 +101,16 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden mt-4 py-4 border-t border-border">
             <nav className="flex flex-col gap-4">
-              <a href="#features" className="text-foreground hover:text-primary transition-colors">
+              <a href="/#features" className="text-foreground hover:text-primary transition-colors">
                 Features
               </a>
-              <a href="#how-it-works" className="text-foreground hover:text-primary transition-colors">
+              <a href="/#how-it-works" className="text-foreground hover:text-primary transition-colors">
                 How It Works
               </a>
-              <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
+              <a href="/#pricing" className="text-foreground hover:text-primary transition-colors">
                 Pricing
               </a>
-              <a href="#who-its-for" className="text-foreground hover:text-primary transition-colors">
+              <a href="/#who-its-for" className="text-foreground hover:text-primary transition-colors">
                 Who It's For
               </a>
               <div className="flex flex-col gap-2 mt-4">

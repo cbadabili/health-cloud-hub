@@ -67,7 +67,7 @@ sources disagree **[verify]**.
 |---|---|---|---|---|
 | **Lawful basis for health data** | s 11; s 26 prohibition with s 32 exemption for healthcare providers; 2026 health regulations | Sensitive data is prohibited by default, with listed conditions that allow it **[verify that health data is listed]** | 🟡 | The platform assumes practices process under the healthcare exemption. There is no record of which basis applies per practice, and no patient consent capture. |
 | **Purpose & minimality** | s 10, 13, 15 | Purpose limitation & minimisation | 🟡 | Role-based dashboards limit what each role sees. No documented purposes, and some fields are broader than needed (e.g. free-text medical history). |
-| **Openness / privacy notice** | s 17–18 | Transparency duties | ❌ | No privacy policy or patient notice. The footer "Privacy Policy" link goes nowhere. |
+| **Openness / privacy notice** | s 17–18 | Transparency duties | 🟡 | Draft privacy policy at `/privacy` (`src/pages/PrivacyPolicy.tsx`), linked from the footer and sign-up page. Business facts still to fill in are in `src/content/privacyPolicyConfig.ts` and show as "To confirm" until set. Needs legal review. No consent step at patient sign-up yet. |
 | **Access control** | s 19 | Security safeguards | 🟡 | RLS is enabled. **But see the critical issue in §5:** users can grant themselves `super_admin` at sign-up. Doctors now need admin approval after a registration check (§5.2). |
 | **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest is handled by the database host **[confirm on our Supabase plan]**. No field-level encryption for clinical notes. |
 | **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | ❌ | No logging of who viewed, changed or exported a record. |
@@ -175,7 +175,8 @@ Founder / legal:
 3. Sign data processing agreements with Supabase and Vercel. Create a
    template operator agreement for practices.
 4. Appoint and register an Information Officer (SA) and a DPO (Botswana).
-5. Write the privacy policy, PAIA manual (SA), breach response plan (with
+5. Fill in the gaps in the draft privacy policy (`src/content/privacyPolicyConfig.ts`) and have it
+   reviewed; write the PAIA manual (SA), breach response plan (with
    72-hour DPA and "as soon as reasonably possible" POPIA timelines) and
    processing register.
 6. Run a formal risk / data protection impact assessment against the 2026

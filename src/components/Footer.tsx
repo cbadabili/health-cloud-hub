@@ -1,4 +1,5 @@
 import { Stethoscope, Mail, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -56,7 +57,7 @@ const Footer = () => {
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">Contact Support</a></li>
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">Training</a></li>
               <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">System Status</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-medical-blue transition-colors">POPIA & DPA</a></li>
+              <li><Link to="/privacy#your-rights" className="text-gray-400 hover:text-medical-blue transition-colors">POPIA & DPA</Link></li>
             </ul>
           </div>
         </div>
@@ -67,9 +68,9 @@ const Footer = () => {
               © {new Date().getFullYear()} Clinithetics EMR & Billing. All rights reserved.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Privacy Policy</a>
+              <Link to="/privacy" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Privacy Policy</Link>
               <a href="#" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Terms of Service</a>
-              <a href="#" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Cookie Policy</a>
+              <Link to="/privacy#cookies" className="text-gray-400 hover:text-medical-blue transition-colors text-sm">Cookie Policy</Link>
             </div>
           </div>
         </div>
