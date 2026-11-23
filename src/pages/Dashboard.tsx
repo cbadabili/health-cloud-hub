@@ -5,7 +5,7 @@ import SuperAdminDashboard from "@/components/dashboards/SuperAdminDashboard";
 import DoctorDashboard from "@/components/dashboards/DoctorDashboard";
 import PatientDashboard from "@/components/dashboards/PatientDashboard";
 import DoctorVerificationGate from "@/components/doctor/DoctorVerificationGate";
-import type { DoctorVerification } from "@/lib/doctorVerification";
+import { isVerificationTableMissing, type DoctorVerification } from "@/lib/doctorVerification";
 import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
@@ -13,6 +13,8 @@ const Dashboard = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [verification, setVerification] = useState<DoctorVerification | null>(null);
+  // false until the verification migration has been applied to the database
+  const [verificationEnabled, setVerificationEnabled] = useState(true);
 
   // Doctors only reach the dashboard once an admin has approved their registration.
   // (The database enforces this too; this just shows the right screen.)
@@ -24,8 +26,13 @@ const Dashboard = () => {
       .eq("doctor_id", user.id)
       .maybeSingle();
     if (error) {
+      if (isVerificationTableMissing(error)) {
+        setVerificationEnabled(false);
+        return;
+      }
       console.error("Error fetching verification:", error);
     }
+    setVerificationEnabled(true);
     setVerification(data ?? null);
   }, [user]);
 
@@ -79,7 +86,7 @@ const Dashboard = () => {
     case "super_admin":
       return <SuperAdminDashboard />;
     case "doctor":
-      return verification?.status === "approved" ? (
+      return !verificationEnabled || verification?.status === "approved" ? (
         <DoctorDashboard />
       ) : (
         <DoctorVerificationGate verification={verification} onChange={fetchVerification} />

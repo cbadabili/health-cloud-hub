@@ -33,6 +33,18 @@ export const STATUS_LABELS: Record<VerificationStatus, string> = {
   rejected: "Rejected",
 };
 
+/**
+ * True when the doctor_verifications table doesn't exist yet, i.e. the
+ * 20261123200000-doctor-verification migration hasn't been applied. In that
+ * case the database isn't enforcing verification either, so the app keeps its
+ * previous behaviour instead of locking doctors out.
+ */
+export const isVerificationTableMissing = (error: { code?: string; message?: string } | null) =>
+  !!error &&
+  (error.code === "PGRST205" ||
+    error.code === "42P01" ||
+    /doctor_verifications/.test(error.message ?? ""));
+
 /** Registration numbers: 3–40 characters after trimming (matches the database check). */
 export const isValidRegistrationNumber = (value: string) => {
   const trimmed = value.trim();

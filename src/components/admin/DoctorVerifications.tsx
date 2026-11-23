@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   COUNCILS,
   STATUS_LABELS,
+  isVerificationTableMissing,
   type DoctorVerification,
   type VerificationStatus,
 } from "@/lib/doctorVerification";
@@ -39,6 +40,7 @@ const DoctorVerifications = () => {
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [notSetUp, setNotSetUp] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +50,11 @@ const DoctorVerifications = () => {
       .order("submitted_at", { ascending: true, nullsFirst: false });
 
     if (error) {
+      if (isVerificationTableMissing(error)) {
+        setNotSetUp(true);
+        setLoading(false);
+        return;
+      }
       toast.error("Could not load doctor verifications.");
       setLoading(false);
       return;
@@ -128,7 +135,13 @@ const DoctorVerifications = () => {
           ))}
         </div>
 
-        {loading ? (
+        {notSetUp ? (
+          <div role="status" className="rounded-lg border border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10 p-4 text-sm text-yellow-800 dark:text-yellow-300">
+            Doctor verification isn't switched on yet. Run the migration{" "}
+            <code className="font-mono">20261123200000-doctor-verification.sql</code> in the Supabase SQL
+            editor, then reload this page.
+          </div>
+        ) : loading ? (
           <div className="flex justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading" />
           </div>
