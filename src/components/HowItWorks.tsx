@@ -76,7 +76,7 @@ const HowItWorks = () => {
 
         <div className="text-center">
           <Button variant="hero" size="xl" className="group" asChild>
-            <Link to="/auth">
+            <Link to="/auth?mode=signup&role=doctor">
               Start Your Free Trial
               <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>

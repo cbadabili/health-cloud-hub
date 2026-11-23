@@ -134,8 +134,8 @@ const PaymentsModule = () => {
             </div>
           </div>
 
-          <div className="border rounded-lg">
-            <div className="grid grid-cols-7 gap-4 p-4 bg-muted font-medium text-sm">
+          <div className="border rounded-lg overflow-x-auto">
+            <div className="grid grid-cols-7 gap-4 p-4 min-w-[56rem] bg-muted font-medium text-sm">
               <div>Payment ID</div>
               <div>User</div>
               <div>Amount</div>
@@ -145,7 +145,7 @@ const PaymentsModule = () => {
               <div>Actions</div>
             </div>
             {filteredPayments.map((payment) => (
-              <div key={payment.id} className="grid grid-cols-7 gap-4 p-4 border-t hover:bg-muted/50">
+              <div key={payment.id} className="grid grid-cols-7 gap-4 p-4 min-w-[56rem] border-t hover:bg-muted/50">
                 <div className="font-mono text-sm">{payment.id}</div>
                 <div className="font-medium">{payment.user}</div>
                 <div className="font-semibold">{payment.amount}</div>

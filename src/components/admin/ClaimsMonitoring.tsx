@@ -142,8 +142,8 @@ const ClaimsMonitoring = () => {
             </Button>
           </div>
 
-          <div className="border rounded-lg">
-            <div className="grid grid-cols-8 gap-4 p-4 bg-muted font-medium text-sm">
+          <div className="border rounded-lg overflow-x-auto">
+            <div className="grid grid-cols-8 gap-4 p-4 min-w-[64rem] bg-muted font-medium text-sm">
               <div>Claim ID</div>
               <div>Patient</div>
               <div>Doctor</div>
@@ -154,7 +154,7 @@ const ClaimsMonitoring = () => {
               <div>Actions</div>
             </div>
             {filteredClaims.map((claim) => (
-              <div key={claim.id} className="grid grid-cols-8 gap-4 p-4 border-t hover:bg-muted/50">
+              <div key={claim.id} className="grid grid-cols-8 gap-4 p-4 min-w-[64rem] border-t hover:bg-muted/50">
                 <div className="font-mono text-sm">{claim.id}</div>
                 <div className="font-medium">{claim.patient}</div>
                 <div className="text-muted-foreground">{claim.doctor}</div>

@@ -8,11 +8,15 @@ import { Stethoscope, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 const Auth = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  // Links can deep-link into a tab and role, e.g. /auth?mode=signup&role=doctor
+  const initialRole: 'patient' | 'doctor' = searchParams.get('role') === 'doctor' ? 'doctor' : 'patient';
+  const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'signin');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,8 +24,17 @@ const Auth = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: 'patient' as 'patient' | 'doctor'
+    role: initialRole
   });
+
+  // Keep the form in sync if the query string changes while on this page
+  useEffect(() => {
+    setActiveTab(searchParams.get('mode') === 'signup' ? 'signup' : 'signin');
+    const role = searchParams.get('role');
+    if (role === 'doctor' || role === 'patient') {
+      setFormData((prev) => ({ ...prev, role }));
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -150,7 +163,7 @@ const Auth = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>

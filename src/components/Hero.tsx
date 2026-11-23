@@ -34,13 +34,13 @@ const Hero = () => {
           {/* Role Selector */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Button variant="hero" size="xl" className="group" asChild>
-              <Link to="/auth">
+              <Link to="/auth?mode=signup&role=doctor">
                 I'm a Doctor
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
             <Button variant="medical-outline" size="xl" className="group" asChild>
-              <Link to="/auth">
+              <Link to="/auth?mode=signup&role=patient">
                 I'm a Patient
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>

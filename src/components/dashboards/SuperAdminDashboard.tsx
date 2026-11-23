@@ -3,15 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Users, 
-  DollarSign, 
-  FileText, 
-  TrendingUp, 
+import {
+  Users,
+  DollarSign,
+  FileText,
+  TrendingUp,
   UserPlus,
   Settings,
   Shield,
-  BarChart3
+  BarChart3,
+  Home,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import UserManagement from "@/components/admin/UserManagement";
@@ -58,34 +60,39 @@ const SuperAdminDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Link 
               to="/" 
-              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity"
+              className="p-2 bg-gradient-primary rounded-lg hover:opacity-80 transition-opacity shrink-0"
+              aria-label="Go to home page"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Shield className="h-6 w-6 text-primary-foreground" />
             </Link>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">Super Admin Dashboard</h1>
-              <p className="text-sm text-muted-foreground">Welcome back, {user?.email}</p>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">Super Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground truncate">Welcome back, {user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" asChild>
-              <Link to="/">Home</Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/" aria-label="Home">
+                <Home className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Home</span>
+              </Link>
             </Button>
-            <Button variant="outline" onClick={signOut}>
-              Sign Out
+            <Button variant="outline" size="sm" onClick={signOut} aria-label="Sign out">
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="flex w-full justify-start overflow-x-auto mb-6 md:grid md:grid-cols-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
