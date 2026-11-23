@@ -390,6 +390,11 @@ const Auth = () => {
                           maxLength={40}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        {formData.registrationCouncil === 'BHPC'
+                          ? 'After you sign in, you\'ll be asked to upload your BHPC certificate. We need it to verify you.'
+                          : 'After you sign in, you can upload your registration certificate to speed up the review.'}
+                      </p>
                     </div>
                   )}
                   

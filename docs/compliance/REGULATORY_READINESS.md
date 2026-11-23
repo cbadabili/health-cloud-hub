@@ -74,7 +74,7 @@ sources disagree **[verify]**.
 | **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Supabase, Vercel). |
 | **Breach notification** | s 22: Regulator and data subjects "as soon as reasonably possible". Reported through the Information Regulator's eServices portal (mandatory since 1 April 2025). | Notify the IDPC within **72 hours** of becoming aware, unless the breach is unlikely to create a risk; notify affected people without undue delay **[verify]** | ❌ | No incident response plan, owner or contact list. |
 | **Data subject rights (access, correction, deletion)** | s 23–25 | Access, rectification, erasure, objection | 🟡 | Patients can view their records in the portal. No export, correction request or deletion flow. |
-| **Retention & deletion** | s 14 | Storage limitation | ❌ | No retention periods or automatic deletion. Note: health record retention rules (e.g. HPCSA guidance) may require keeping records for years. Define per record type. |
+| **Retention & deletion** | s 14 | Storage limitation | ❌ | No retention periods or automatic deletion. This includes doctor registration certificates in the `doctor-certificates` bucket. Note: health record retention rules (e.g. HPCSA guidance) may require keeping records for years. Define per record type. |
 | **Information Officer / DPO** | s 55–56: register the Information Officer with the Information Regulator | A DPO is required for large-scale processing of sensitive data; sources disagree on whether to register or notify the IDPC **[verify]** | ❌ | No named officer for either country. |
 | **Cross-border transfers** | s 72. Prior authorisation (s 57) may be needed to send special personal information to a country without adequate protection. | Transfers outside Botswana are restricted. Sources say **a copy must remain in Botswana**, and sensitive data may need prior Commission approval **[verify]** | ❌ | **Hosting region unknown.** If Supabase or Vercel store data outside SA or Botswana, these rules apply. The Botswana copy requirement could need an in-country replica. |
 | **Accountability / documentation** | s 8 | Accountability | ❌ | No processing register, risk assessment or policies. |
@@ -124,6 +124,15 @@ sign-up or on a holding screen; only super_admins approve or reject them, in
 the admin **Verifications** tab, and each decision is stamped with who made it
 and when. Tested on Postgres 16 with RLS (14 checks), including attempted
 self-approval.
+
+**Certificates** (`20261123210000-doctor-certificates.sql`): doctors can upload
+a certificate of registration or good standing (PDF/JPG/PNG, max 5 MB;
+required for BHPC). Files are stored in a **private** Storage bucket under the
+doctor's own folder. Doctors can only read their own files, admins view them
+through 60-second signed URLs, and after approval a doctor can no longer
+delete or replace the evidence. Tested with 13 storage-policy checks.
+Certificates are personal information, so they need a retention period (see
+"Retention & deletion" in §4).
 
 Limits: checking a number against the HPCSA iRegister, or with BHPC (which
 has no public online register), is a manual admin step. Existing doctors are

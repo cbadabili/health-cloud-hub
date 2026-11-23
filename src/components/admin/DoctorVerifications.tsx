@@ -3,13 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, ExternalLink, Loader2, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, Check, ExternalLink, FileText, Loader2, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   COUNCILS,
   STATUS_LABELS,
+  certificateFileName,
+  isCertificateRequired,
   isVerificationTableMissing,
+  openCertificate,
   type DoctorVerification,
   type VerificationStatus,
 } from "@/lib/doctorVerification";
@@ -104,6 +107,10 @@ const DoctorVerifications = () => {
     load();
   };
 
+  const viewCertificate = async (path: string) => {
+    if (!(await openCertificate(path))) toast.error("Could not open the certificate.");
+  };
+
   const name = (row: Row) =>
     [row.profile?.first_name, row.profile?.last_name].filter(Boolean).join(" ") || "Unnamed doctor";
 
@@ -164,7 +171,7 @@ const DoctorVerifications = () => {
                     <Badge className={`w-fit border-0 ${STATUS_STYLES[row.status]}`}>{STATUS_LABELS[row.status]}</Badge>
                   </div>
 
-                  <dl className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                  <dl className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
                     <div>
                       <dt className="text-muted-foreground">Council</dt>
                       <dd className="text-foreground">{council ? `${council.label} (${council.country})` : "—"}</dd>
@@ -172,6 +179,30 @@ const DoctorVerifications = () => {
                     <div>
                       <dt className="text-muted-foreground">Registration no.</dt>
                       <dd className="font-mono text-foreground break-all">{row.registration_number ?? "—"}</dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-muted-foreground">Certificate</dt>
+                      <dd>
+                        {row.certificate_path ? (
+                          <button
+                            type="button"
+                            onClick={() => viewCertificate(row.certificate_path!)}
+                            className="inline-flex max-w-full items-center gap-1 text-primary underline-offset-4 hover:underline"
+                            title={certificateFileName(row.certificate_path)}
+                          >
+                            <FileText className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">View</span>
+                            <span className="sr-only">certificate for {name(row)}</span>
+                          </button>
+                        ) : isCertificateRequired(row.council) ? (
+                          <span className="inline-flex items-center gap-1 text-yellow-700 dark:text-yellow-300">
+                            <AlertTriangle className="h-3.5 w-3.5" />
+                            Missing (required)
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">Not uploaded</span>
+                        )}
+                      </dd>
                     </div>
                     <div>
                       <dt className="text-muted-foreground">Submitted</dt>

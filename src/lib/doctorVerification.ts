@@ -1,4 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 export type RegistrationCouncil = Database["public"]["Enums"]["registration_council"];
 export type VerificationStatus = Database["public"]["Enums"]["verification_status"];
@@ -49,4 +50,62 @@ export const isVerificationTableMissing = (error: { code?: string; message?: str
 export const isValidRegistrationNumber = (value: string) => {
   const trimmed = value.trim();
   return trimmed.length >= 3 && trimmed.length <= 40;
+};
+
+// --- Certificate upload ------------------------------------------------------
+
+/** Private Supabase Storage bucket (see 20261123210000-doctor-certificates.sql). */
+export const CERTIFICATE_BUCKET = "doctor-certificates";
+export const CERTIFICATE_MAX_BYTES = 5 * 1024 * 1024;
+export const CERTIFICATE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+export const CERTIFICATE_ACCEPT = ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png";
+
+/** BHPC has no public online register, so a certificate is the only evidence. */
+export const isCertificateRequired = (council: RegistrationCouncil | "" | null | undefined) => council === "BHPC";
+
+/** Returns an error message, or null if the file is acceptable. */
+export const validateCertificateFile = (file: File): string | null => {
+  if (!CERTIFICATE_TYPES.includes(file.type)) return "Please upload a PDF, JPG or PNG file.";
+  if (file.size > CERTIFICATE_MAX_BYTES) return "The file is too large. The limit is 5 MB.";
+  if (file.size === 0) return "The file is empty.";
+  return null;
+};
+
+/** Files go in the doctor's own folder; storage policies only allow "<user id>/...". */
+export const buildCertificatePath = (userId: string, file: File) => {
+  const safeName = file.name
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/-+\./g, ".")
+    .replace(/^-+|-+$/g, "")
+    .slice(-80);
+  return `${userId}/${Date.now()}-${safeName || "certificate"}`;
+};
+
+/** Display name without the folder and timestamp prefix. */
+export const certificateFileName = (path: string) => path.split("/").pop()?.replace(/^\d+-/, "") ?? path;
+
+export const formatFileSize = (bytes: number) =>
+  bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+/**
+ * Opens a certificate in a new tab via a signed URL that expires after 60 s.
+ * The tab is opened synchronously (before the await) so popup blockers allow it.
+ * Returns false if the link couldn't be created.
+ */
+export const openCertificate = async (path: string): Promise<boolean> => {
+  const tab = window.open("", "_blank");
+  const { data, error } = await supabase.storage.from(CERTIFICATE_BUCKET).createSignedUrl(path, 60);
+  if (error || !data?.signedUrl) {
+    tab?.close();
+    return false;
+  }
+  if (tab) {
+    tab.opener = null;
+    tab.location.href = data.signedUrl;
+  } else {
+    window.location.assign(data.signedUrl);
+  }
+  return true;
 };
