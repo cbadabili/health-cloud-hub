@@ -50,11 +50,11 @@ platform payments/payouts, or medical-aid claims.
 ## Tasks, in priority order
 
 ### 0. Security fixes first (see `docs/compliance/REGULATORY_READINESS.md` §5)
-- **Critical:** `handle_new_user` (`supabase/migrations/20250711072229-*.sql`)
-  takes the role from client-supplied sign-up metadata, so anyone can sign up
-  as `super_admin`. Add a new migration that accepts only `patient` or
-  `doctor` from sign-up (anything else becomes `patient`), and a way to
-  assign `super_admin` only by hand or through a privileged server function.
+- **Done:** the `super_admin` sign-up hole is fixed by
+  `supabase/migrations/20261123180000-restrict-signup-roles.sql` (only
+  `patient`/`doctor` can be self-selected). Never derive roles from
+  `raw_user_meta_data` / `user_metadata` again. `super_admin` is granted by
+  hand only.
 - `vercel.json` sets `Permissions-Policy: camera=(), microphone=()`, which
   blocks telehealth video. Change it to `(self)` when video is wired up.
 

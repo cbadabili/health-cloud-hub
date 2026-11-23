@@ -83,7 +83,20 @@ sources disagree **[verify]**.
 
 ## 5. Critical issues to fix first
 
-### 5.1 Anyone can sign up as `super_admin` 🔴
+### 5.1 Anyone could sign up as `super_admin` ✅ fixed in code, must be applied to production
+**Fixed by** `supabase/migrations/20261123180000-restrict-signup-roles.sql`
+(tested against Postgres 16: before the fix a `super_admin` sign-up got
+`super_admin`; after it, every non-`doctor` value, including `SUPER_ADMIN`,
+becomes `patient`). The migration must be **run on the production database**,
+and existing roles audited:
+
+```sql
+SELECT r.user_id, p.email, r.created_at
+FROM public.user_roles r JOIN public.profiles p ON p.user_id = r.user_id
+WHERE r.role = 'super_admin';
+```
+
+Original finding:
 `supabase/migrations/20250711072229-*.sql` (`handle_new_user`) sets the new
 user's role straight from sign-up metadata:
 
@@ -118,7 +131,7 @@ video provider's origin in the CSP).
 ## 6. Before claiming compliance
 
 Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
-1. Fix the `super_admin` sign-up hole (§5.1) and audit existing roles.
+1. ~~Fix the `super_admin` sign-up hole (§5.1)~~ done in code; apply the migration to production and audit existing roles.
 2. Add doctor verification or admin approval (§5.2).
 3. Add an append-only audit log for record views, edits, exports and admin
    actions.
