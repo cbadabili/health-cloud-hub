@@ -55,8 +55,20 @@ platform payments/payouts, or medical-aid claims.
   `patient`/`doctor` can be self-selected). Never derive roles from
   `raw_user_meta_data` / `user_metadata` again. `super_admin` is granted by
   hand only.
-- `vercel.json` sets `Permissions-Policy: camera=(), microphone=()`, which
-  blocks telehealth video. Change it to `(self)` when video is wired up.
+- **Done:** `vercel.json` now allows `camera=(self), microphone=(self)`.
+
+### 0b. Telehealth video is not implemented yet
+`src/components/doctor/TelehealthSession.tsx` and
+`src/components/patient/TelehealthAccess.tsx` only toggle UI state. No
+`getUserMedia` or video provider exists, the "Ready" system checks are
+hardcoded, and `AppointmentBooking.tsx` opens `/telehealth-session`, a route
+that doesn't exist (404). When adding a provider (e.g. Daily, Twilio, Jitsi):
+- add its origins to the CSP in `vercel.json` (`connect-src`, `frame-src`,
+  `media-src` as needed);
+- if it runs in an iframe, delegate permissions with
+  `camera=(self "https://provider.origin")` and the iframe's
+  `allow="camera; microphone"`;
+- make the system check call `navigator.mediaDevices.getUserMedia` for real.
 
 ### 1. Wire up the core doctor actions
 Files in `src/components/doctor/` already read from Supabase, but their
