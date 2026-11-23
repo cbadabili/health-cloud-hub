@@ -49,6 +49,15 @@ platform payments/payouts, or medical-aid claims.
 
 ## Tasks, in priority order
 
+### 0. Security fixes first (see `docs/compliance/REGULATORY_READINESS.md` §5)
+- **Done:** the `super_admin` sign-up hole is fixed by
+  `supabase/migrations/20261123180000-restrict-signup-roles.sql` (only
+  `patient`/`doctor` can be self-selected). Never derive roles from
+  `raw_user_meta_data` / `user_metadata` again. `super_admin` is granted by
+  hand only.
+- `vercel.json` sets `Permissions-Policy: camera=(), microphone=()`, which
+  blocks telehealth video. Change it to `(self)` when video is wired up.
+
 ### 1. Wire up the core doctor actions
 Files in `src/components/doctor/` already read from Supabase, but their
 create/edit buttons have no handlers.
