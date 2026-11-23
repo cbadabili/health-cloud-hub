@@ -3,6 +3,7 @@ import { Stethoscope, Menu, X, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +53,7 @@ const Header = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -112,6 +114,7 @@ const Header = () => {
                 Testimonials
               </a>
               <div className="flex flex-col gap-2 mt-4">
+                <ThemeToggle showLabel />
                 {user ? (
                   <>
                     <Button variant="ghost" className="justify-start">

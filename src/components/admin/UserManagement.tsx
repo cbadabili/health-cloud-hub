@@ -64,10 +64,10 @@ const UserManagement = () => {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'super_admin': return 'bg-red-100 text-red-800';
-      case 'doctor': return 'bg-blue-100 text-blue-800';
-      case 'patient': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'super_admin': return 'bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300';
+      case 'doctor': return 'bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300';
+      case 'patient': return 'bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300';
+      default: return 'bg-gray-100 dark:bg-muted text-gray-800 dark:text-gray-200';
     }
   };
 
@@ -139,7 +139,7 @@ const UserManagement = () => {
                   <Button size="sm" variant="outline">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                  <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400 hover:text-red-700">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

@@ -21,9 +21,9 @@ const SubscriptionManagement = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active': return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'cancelled': return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
-      case 'past_due': return <Badge className="bg-yellow-100 text-yellow-800">Past Due</Badge>;
+      case 'active': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Active</Badge>;
+      case 'cancelled': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Cancelled</Badge>;
+      case 'past_due': return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300">Past Due</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -31,8 +31,8 @@ const SubscriptionManagement = () => {
   const getPlanBadge = (plan: string) => {
     switch (plan) {
       case 'Basic': return <Badge variant="outline">Basic</Badge>;
-      case 'Pro': return <Badge className="bg-blue-100 text-blue-800">Pro</Badge>;
-      case 'Premium': return <Badge className="bg-purple-100 text-purple-800">Premium</Badge>;
+      case 'Pro': return <Badge className="bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300">Pro</Badge>;
+      case 'Premium': return <Badge className="bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300">Premium</Badge>;
       default: return <Badge>{plan}</Badge>;
     }
   };
@@ -51,7 +51,7 @@ const SubscriptionManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                 {stat.change} from last month
               </p>
             </CardContent>

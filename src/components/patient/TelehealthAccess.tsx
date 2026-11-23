@@ -177,8 +177,8 @@ const TelehealthAccess = () => {
             {upcomingTelehealthAppointments.map((appointment) => (
               <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Video className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-blue-100 dark:bg-blue-500/15 rounded-lg">
+                    <Video className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <h4 className="font-semibold">{appointment.doctor}</h4>
@@ -236,7 +236,7 @@ const TelehealthAccess = () => {
               <input
                 type="text"
                 placeholder="Enter meeting ID (e.g., TCH-001-2024)"
-                className="w-full px-3 py-2 border border-border rounded-md"
+                className="w-full px-3 py-2 border border-input bg-background text-foreground placeholder:text-muted-foreground rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             <Button>
@@ -260,8 +260,8 @@ const TelehealthAccess = () => {
             {pastSessions.map((session) => (
               <div key={session.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <User className="h-4 w-4 text-green-600" />
+                  <div className="p-2 bg-green-100 dark:bg-green-500/15 rounded-lg">
+                    <User className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
                     <h4 className="font-medium">{session.doctor}</h4>

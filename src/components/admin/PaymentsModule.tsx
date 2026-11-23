@@ -65,10 +65,10 @@ const PaymentsModule = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed': return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'failed': return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      case 'refunded': return <Badge className="bg-gray-100 text-gray-800">Refunded</Badge>;
+      case 'completed': return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Completed</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300">Pending</Badge>;
+      case 'failed': return <Badge className="bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300">Failed</Badge>;
+      case 'refunded': return <Badge className="bg-gray-100 dark:bg-muted text-gray-800 dark:text-gray-200">Refunded</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -94,7 +94,7 @@ const PaymentsModule = () => {
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
               <p className={`text-xs mt-1 ${
-                stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                stat.change.startsWith('+') ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
               }`}>
                 {stat.change} from last month
               </p>
@@ -157,12 +157,12 @@ const PaymentsModule = () => {
                     View
                   </Button>
                   {payment.status === 'failed' && (
-                    <Button size="sm" variant="outline" className="text-blue-600">
+                    <Button size="sm" variant="outline" className="text-blue-600 dark:text-blue-400">
                       Retry
                     </Button>
                   )}
                   {payment.status === 'completed' && (
-                    <Button size="sm" variant="outline" className="text-red-600">
+                    <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400">
                       Refund
                     </Button>
                   )}
@@ -193,7 +193,7 @@ const PaymentsModule = () => {
               </div>
               <div className="text-right">
                 <p className="font-semibold">R18,750</p>
-                <Badge className="bg-yellow-100 text-yellow-800 mt-1">Pending</Badge>
+                <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300 mt-1">Pending</Badge>
               </div>
               <Button size="sm">Process Payout</Button>
             </div>
@@ -204,7 +204,7 @@ const PaymentsModule = () => {
               </div>
               <div className="text-right">
                 <p className="font-semibold">R12,400</p>
-                <Badge className="bg-green-100 text-green-800 mt-1">Paid</Badge>
+                <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300 mt-1">Paid</Badge>
               </div>
               <Button size="sm" variant="outline">View Details</Button>
             </div>

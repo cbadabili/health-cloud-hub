@@ -206,8 +206,8 @@ const AppointmentBooking = () => {
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-1 rounded-full text-xs ${
                     appointment.status === 'Confirmed' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300' 
+                      : 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300'
                   }`}>
                     {appointment.status}
                   </span>

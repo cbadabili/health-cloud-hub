@@ -16,6 +16,7 @@ import {
   LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 import AppointmentBooking from "@/components/patient/AppointmentBooking";
 import MedicalRecords from "@/components/patient/MedicalRecords";
 import PaymentHistory from "@/components/patient/PaymentHistory";
@@ -32,28 +33,28 @@ const PatientDashboard = () => {
       value: "Mar 15",
       subtitle: "Dr. Smith - 2:30 PM",
       icon: Calendar,
-      color: "text-blue-600"
+      color: "text-blue-600 dark:text-blue-400"
     },
     {
       title: "Active Prescriptions",
       value: "3",
       subtitle: "2 refills needed",
       icon: Pill,
-      color: "text-green-600"
+      color: "text-green-600 dark:text-green-400"
     },
     {
       title: "Upcoming Payments",
       value: "R450",
       subtitle: "Due Mar 20",
       icon: DollarSign,
-      color: "text-orange-600"
+      color: "text-orange-600 dark:text-orange-400"
     },
     {
       title: "Health Score",
       value: "Good",
       subtitle: "Last updated today",
       icon: Heart,
-      color: "text-red-600"
+      color: "text-red-600 dark:text-red-400"
     }
   ];
 
@@ -94,7 +95,8 @@ const PatientDashboard = () => {
               <Video className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Join Telehealth</span>
             </Button>
-            <Button variant="outline" size="sm" asChild>
+            <ThemeToggle />
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
               <Link to="/" aria-label="Home">
                 <Home className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Home</span>
@@ -225,10 +227,10 @@ const PatientDashboard = () => {
                   {recentActivity.map((activity, index) => (
                     <div key={index} className="flex items-start gap-4 p-3 border border-border rounded-lg">
                       <div className={`p-2 rounded-full ${
-                        activity.type === 'appointment' ? 'bg-blue-100 text-blue-600' :
-                        activity.type === 'prescription' ? 'bg-green-100 text-green-600' :
-                        activity.type === 'payment' ? 'bg-orange-100 text-orange-600' :
-                        'bg-purple-100 text-purple-600'
+                        activity.type === 'appointment' ? 'bg-blue-100 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400' :
+                        activity.type === 'prescription' ? 'bg-green-100 dark:bg-green-500/15 text-green-600 dark:text-green-400' :
+                        activity.type === 'payment' ? 'bg-orange-100 dark:bg-orange-500/15 text-orange-600 dark:text-orange-400' :
+                        'bg-purple-100 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400'
                       }`}>
                         {activity.type === 'appointment' && <Calendar className="h-4 w-4" />}
                         {activity.type === 'prescription' && <Pill className="h-4 w-4" />}
