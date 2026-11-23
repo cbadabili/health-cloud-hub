@@ -97,6 +97,7 @@ export type Database = {
       }
       doctor_verifications: {
         Row: {
+          certificate_path: string | null
           council: Database["public"]["Enums"]["registration_council"] | null
           created_at: string
           doctor_id: string
@@ -109,6 +110,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          certificate_path?: string | null
           council?: Database["public"]["Enums"]["registration_council"] | null
           created_at?: string
           doctor_id: string
@@ -121,6 +123,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          certificate_path?: string | null
           council?: Database["public"]["Enums"]["registration_council"] | null
           created_at?: string
           doctor_id?: string

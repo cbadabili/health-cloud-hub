@@ -60,7 +60,10 @@ platform payments/payouts, or medical-aid claims.
 - **Done:** doctor verification (`doctor_verifications` table, approved-only
   doctor RLS, admin Verifications tab, holding screen for unapproved doctors).
   Any new doctor-facing policy must also require
-  `public.is_verified_doctor(auth.uid())`.
+  `public.is_verified_doctor(auth.uid())`. Certificates live in the private
+  `doctor-certificates` bucket under `<doctor id>/`. Never make it public, and
+  open files only via signed URLs (`openCertificate` in
+  `src/lib/doctorVerification.ts`).
 
 ### 0b. Telehealth video is not implemented yet
 `src/components/doctor/TelehealthSession.tsx` and
