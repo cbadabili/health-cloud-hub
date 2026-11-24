@@ -1,89 +1,185 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, Clock, MapPin, User, Stethoscope, Video, FileText, Phone } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Calendar, Clock, Info, Loader2, MapPin, Stethoscope, User } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  TIME_SLOTS,
+  bookingErrorMessage,
+  doctorName,
+  formatFee,
+  isBookingNotSetUp,
+  localDayRange,
+  slotToDate,
+  toSlotTime,
+  todayLocal,
+} from "@/lib/booking";
+
+interface BookableDoctor {
+  doctor_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  specialization: string | null;
+  consultation_fee: number | null;
+}
+
+interface UpcomingAppointment {
+  id: string;
+  doctor_id: string;
+  appointment_date: string;
+  appointment_type: string;
+  reason_for_visit: string | null;
+}
 
 const AppointmentBooking = () => {
+  const { user } = useAuth();
+
+  const [doctors, setDoctors] = useState<BookableDoctor[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+  const [bookingSetUp, setBookingSetUp] = useState(true);
+
+  const [appointments, setAppointments] = useState<UpcomingAppointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
+
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [reason, setReason] = useState("");
+  const [takenSlots, setTakenSlots] = useState<Set<string>>(new Set());
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
-  const doctors = [
-    { id: "1", name: "Dr. Sarah Johnson", specialty: "Cardiology", fee: "R650" },
-    { id: "2", name: "Dr. Michael Chen", specialty: "General Practice", fee: "R450" },
-    { id: "3", name: "Dr. Emma Davis", specialty: "Pediatrics", fee: "R550" },
-    { id: "4", name: "Dr. James Wilson", specialty: "Dermatology", fee: "R500" },
-  ];
+  const loadDoctors = useCallback(async () => {
+    setLoadingDoctors(true);
+    const { data, error } = await supabase.rpc("list_bookable_doctors");
+    if (error) {
+      if (isBookingNotSetUp(error)) setBookingSetUp(false);
+      else toast.error("Could not load doctors. Please try again.");
+    } else {
+      setBookingSetUp(true);
+      setDoctors(data ?? []);
+    }
+    setLoadingDoctors(false);
+  }, []);
 
-  const timeSlots = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-    "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"
-  ];
+  const loadAppointments = useCallback(async () => {
+    if (!user) return;
+    setLoadingAppointments(true);
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("id, doctor_id, appointment_date, appointment_type, reason_for_visit")
+      .eq("patient_id", user.id)
+      .eq("status", "scheduled")
+      .gte("appointment_date", new Date().toISOString())
+      .order("appointment_date", { ascending: true });
+    if (error) toast.error("Could not load your appointments.");
+    setAppointments(data ?? []);
+    setLoadingAppointments(false);
+  }, [user]);
 
-  const upcomingAppointments = [
-    { 
-      id: "1", 
-      doctor: "Dr. Sarah Johnson", 
-      specialty: "Cardiology",
-      date: "2024-03-15", 
-      time: "14:30", 
-      status: "Confirmed",
-      location: "Room 302"
-    },
-    { 
-      id: "2", 
-      doctor: "Dr. Michael Chen", 
-      specialty: "General Practice",
-      date: "2024-03-22", 
-      time: "10:00", 
-      status: "Pending",
-      location: "Telehealth"
-    },
-  ];
+  // Times already taken for the chosen doctor and day.
+  const loadTakenSlots = useCallback(async () => {
+    if (!selectedDoctor || !selectedDate) {
+      setTakenSlots(new Set());
+      return;
+    }
+    setLoadingSlots(true);
+    const { from, to } = localDayRange(selectedDate);
+    const { data, error } = await supabase.rpc("doctor_booked_slots", {
+      _doctor_id: selectedDoctor,
+      _from: from,
+      _to: to,
+    });
+    setTakenSlots(error ? new Set() : new Set((data ?? []).map(toSlotTime)));
+    setLoadingSlots(false);
+  }, [selectedDoctor, selectedDate]);
 
-  const handleBookAppointment = () => {
-    if (!selectedDoctor || !selectedDate || !selectedTime || !reason) {
-      toast.error("Please fill in all required fields");
+  useEffect(() => {
+    loadDoctors();
+    loadAppointments();
+  }, [loadDoctors, loadAppointments]);
+
+  useEffect(() => {
+    loadTakenSlots();
+  }, [loadTakenSlots]);
+
+  const doctorsById = useMemo(() => new Map(doctors.map((d) => [d.doctor_id, d])), [doctors]);
+
+  /** A slot is unavailable if it's booked, or already past (for today). */
+  const isSlotUnavailable = (time: string) =>
+    takenSlots.has(time) || (selectedDate !== "" && slotToDate(selectedDate, time) <= new Date());
+
+  // Clear a chosen time that has become unavailable.
+  useEffect(() => {
+    if (selectedTime && selectedDate && isSlotUnavailable(selectedTime)) setSelectedTime("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [takenSlots, selectedDate]);
+
+  const handleBookAppointment = async () => {
+    if (!selectedDoctor || !selectedDate || !selectedTime || reason.trim().length < 3) {
+      toast.error("Please choose a doctor, date and time, and tell us the reason for your visit.");
       return;
     }
 
-    const selectedDoctorInfo = doctors.find(doc => doc.id === selectedDoctor);
-    toast.success(`Appointment booked with ${selectedDoctorInfo?.name} on ${selectedDate} at ${selectedTime}!`);
-    
-    // Reset form
-    setSelectedDoctor("");
+    const startsAt = slotToDate(selectedDate, selectedTime);
+    setSubmitting(true);
+    const { error } = await supabase.rpc("book_appointment", {
+      _doctor_id: selectedDoctor,
+      _starts_at: startsAt.toISOString(),
+      _reason: reason.trim(),
+    });
+    setSubmitting(false);
+
+    if (error) {
+      toast.error(bookingErrorMessage(error) ?? "Could not book the appointment. Please try again.");
+      loadTakenSlots();
+      return;
+    }
+
+    const doctor = doctorsById.get(selectedDoctor);
+    toast.success(
+      `Appointment booked with ${doctorName(doctor?.first_name, doctor?.last_name)} on ${startsAt.toLocaleDateString()} at ${selectedTime}.`,
+    );
     setSelectedDate("");
     setSelectedTime("");
     setReason("");
+    loadAppointments();
   };
 
-  const handleViewDetails = (appointment: any) => {
-    toast.info(`Viewing details for appointment with ${appointment.doctor}`);
-  };
-
-  const handleJoinCall = (appointment: any) => {
-    if (appointment.location === 'Telehealth') {
-      toast.success(`Joining telehealth session with ${appointment.doctor}`);
-      // Open telehealth interface
-      window.open('/telehealth-session', '_blank');
-    } else {
-      toast.info(`Please visit ${appointment.location} for your appointment`);
+  const handleCancelAppointment = async (appointment: UpcomingAppointment) => {
+    setCancelling(appointment.id);
+    const { error } = await supabase.rpc("cancel_my_appointment", { _appointment_id: appointment.id });
+    setCancelling(null);
+    if (error) {
+      toast.error(bookingErrorMessage(error) ?? "Could not cancel the appointment. Please try again.");
+      return;
     }
+    toast.success("Your appointment has been cancelled.");
+    loadAppointments();
+    loadTakenSlots();
   };
 
-  const handleCancelAppointment = (appointment: any) => {
-    toast.success(`Appointment with ${appointment.doctor} has been cancelled`);
-  };
-
-  const handleRescheduleAppointment = (appointment: any) => {
-    toast.info(`Rescheduling appointment with ${appointment.doctor}`);
+  const nameFor = (doctorId: string) => {
+    const d = doctorsById.get(doctorId);
+    return doctorName(d?.first_name, d?.last_name);
   };
 
   return (
@@ -97,74 +193,121 @@ const AppointmentBooking = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="doctor">Select Doctor</Label>
-              <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a doctor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {doctors.map((doctor) => (
-                    <SelectItem key={doctor.id} value={doctor.id}>
-                      <div className="flex items-center gap-2">
-                        <Stethoscope className="h-4 w-4" />
-                        <div>
-                          <p className="font-medium">{doctor.name}</p>
-                          <p className="text-sm text-muted-foreground">{doctor.specialty} - {doctor.fee}</p>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {!bookingSetUp ? (
+            <p role="status" className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              Online booking isn't available yet. Please contact your practice to make an appointment.
+            </p>
+          ) : !loadingDoctors && doctors.length === 0 ? (
+            <p role="status" className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              No doctors are available for online booking yet. Please contact your practice to make an appointment.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="doctor">Doctor</Label>
+                  <Select value={selectedDoctor} onValueChange={setSelectedDoctor} disabled={loadingDoctors}>
+                    <SelectTrigger id="doctor">
+                      <SelectValue placeholder={loadingDoctors ? "Loading doctors..." : "Choose a doctor"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors.map((doctor) => {
+                        const fee = formatFee(doctor.consultation_fee);
+                        return (
+                          <SelectItem key={doctor.doctor_id} value={doctor.doctor_id}>
+                            <div className="flex items-center gap-2">
+                              <Stethoscope className="h-4 w-4" />
+                              <div>
+                                <p className="font-medium">{doctorName(doctor.first_name, doctor.last_name)}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {[doctor.specialization, fee].filter(Boolean).join(" · ") || "General"}
+                                </p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date">Preferred Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={todayLocal()}
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="time">Preferred Time</Label>
-              <Select value={selectedTime} onValueChange={setSelectedTime}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose time slot" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        {time}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <Select
+                    value={selectedTime}
+                    onValueChange={setSelectedTime}
+                    disabled={!selectedDoctor || !selectedDate || loadingSlots}
+                  >
+                    <SelectTrigger id="time">
+                      <SelectValue
+                        placeholder={
+                          !selectedDoctor || !selectedDate
+                            ? "Choose a doctor and date first"
+                            : loadingSlots
+                              ? "Checking availability..."
+                              : "Choose a time"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_SLOTS.map((time) => {
+                        const unavailable = isSlotUnavailable(time);
+                        return (
+                          <SelectItem key={time} value={time} disabled={unavailable}>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {time}
+                              {takenSlots.has(time) && (
+                                <span className="text-xs text-muted-foreground">(booked)</span>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason for Visit</Label>
-              <Textarea
-                id="reason"
-                placeholder="Brief description of your symptoms or reason for visit"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                className="md:col-span-1"
-              />
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Reason for visit</Label>
+                  <Textarea
+                    id="reason"
+                    placeholder="Briefly describe your symptoms or the reason for your visit"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    maxLength={1000}
+                  />
+                </div>
+              </div>
 
-          <Button onClick={handleBookAppointment} className="w-full md:w-auto">
-            Book Appointment
-          </Button>
+              <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Info className="h-4 w-4 shrink-0" />
+                Online booking is for in-person visits. Video consultations are coming soon.
+              </p>
+
+              <Button onClick={handleBookAppointment} className="w-full md:w-auto" disabled={submitting || loadingDoctors}>
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Booking...
+                  </>
+                ) : (
+                  "Book Appointment"
+                )}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -177,121 +320,92 @@ const AppointmentBooking = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {upcomingAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold">{appointment.doctor}</h4>
-                    <p className="text-sm text-muted-foreground">{appointment.specialty}</p>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(appointment.date).toLocaleDateString()}
+          {loadingAppointments ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading appointments" />
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              You have no upcoming appointments.
+              {bookingSetUp && doctors.length > 0 && " Book one above."}
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {appointments.map((appointment) => {
+                const when = new Date(appointment.appointment_date);
+                const doctor = doctorsById.get(appointment.doctor_id);
+                const name = nameFor(appointment.doctor_id);
+                return (
+                  <li
+                    key={appointment.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                        <User className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3" />
-                        {appointment.time}
-                      </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <MapPin className="h-3 w-3" />
-                        {appointment.location}
+                      <div className="min-w-0">
+                        <h4 className="font-semibold">{name}</h4>
+                        {doctor?.specialization && (
+                          <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                        )}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {when.toLocaleDateString()}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {toSlotTime(appointment.appointment_date)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            {appointment.appointment_type === "telehealth" ? "Telehealth" : "In person"}
+                          </span>
+                        </div>
+                        {appointment.reason_for_visit && (
+                          <p className="mt-1 text-sm text-muted-foreground break-words">
+                            {appointment.reason_for_visit}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    appointment.status === 'Confirmed' 
-                      ? 'bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300' 
-                      : 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-800 dark:text-yellow-300'
-                  }`}>
-                    {appointment.status}
-                  </span>
-                  
-                  {appointment.location === 'Telehealth' ? (
-                    <Button 
-                      variant="default" 
-                      size="sm"
-                      onClick={() => handleJoinCall(appointment)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <Video className="h-4 w-4 mr-1" />
-                      Join Call
-                    </Button>
-                  ) : (
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <FileText className="h-4 w-4 mr-1" />
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Appointment Details</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Doctor</p>
-                              <p className="font-semibold">{appointment.doctor}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Specialty</p>
-                              <p>{appointment.specialty}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Date</p>
-                              <p>{new Date(appointment.date).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Time</p>
-                              <p>{appointment.time}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Location</p>
-                              <p>{appointment.location}</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Status</p>
-                              <p className="capitalize">{appointment.status}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="border-t pt-4 space-y-2">
-                            <Button 
-                              variant="outline" 
-                              className="w-full"
-                              onClick={() => handleRescheduleAppointment(appointment)}
-                            >
-                              <Calendar className="h-4 w-4 mr-2" />
-                              Reschedule
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              className="w-full"
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">
+                        Booked
+                      </span>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="sm" disabled={cancelling === appointment.id}>
+                            {cancelling === appointment.id ? "Cancelling..." : "Cancel"}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Your appointment with {name} on {when.toLocaleDateString()} at{" "}
+                              {toSlotTime(appointment.appointment_date)} will be cancelled and the time released.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep appointment</AlertDialogCancel>
+                            <AlertDialogAction
                               onClick={() => handleCancelAppointment(appointment)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                              Cancel Appointment
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-              </div>
-            ))}
-            {upcomingAppointments.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No upcoming appointments. Book your first appointment above!
-              </div>
-            )}
-          </div>
+                              Cancel appointment
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </div>

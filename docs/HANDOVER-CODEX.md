@@ -69,8 +69,8 @@ platform payments/payouts, or medical-aid claims.
 `src/components/doctor/TelehealthSession.tsx` and
 `src/components/patient/TelehealthAccess.tsx` only toggle UI state. No
 `getUserMedia` or video provider exists, the "Ready" system checks are
-hardcoded, and `AppointmentBooking.tsx` opens `/telehealth-session`, a route
-that doesn't exist (404). When adding a provider (e.g. Daily, Twilio, Jitsi):
+hardcoded, and the patient Telehealth tab's "Join Session" buttons go nowhere.
+Patient booking currently creates in-person appointments only. When adding a provider (e.g. Daily, Twilio, Jitsi):
 - add its origins to the CSP in `vercel.json` (`connect-src`, `frame-src`,
   `media-src` as needed);
 - if it runs in an iframe, delegate permissions with
@@ -110,8 +110,12 @@ These screens show static arrays that look real but aren't:
 - `src/components/dashboards/PatientDashboard.tsx`: stat cards, upcoming
   appointments, recent activity. **Remove the "Health Score" card**; it has no
   data source and is misleading in a clinical product.
-- `src/components/patient/AppointmentBooking.tsx`: doctor list, time slots,
-  upcoming list. Booking must insert into `appointments`.
+- **Done:** `src/components/patient/AppointmentBooking.tsx` uses real data via
+  `supabase/migrations/20261124090000-patient-booking.sql`
+  (`list_bookable_doctors`, `doctor_booked_slots`, `book_appointment`,
+  `cancel_my_appointment`, all validated server-side). Reuse these functions
+  for the patient Overview tab's upcoming appointments, which are still
+  hardcoded.
 - `src/components/patient/MedicalRecords.tsx`: records, prescriptions,
   allergies (read from `medical_records`, `prescriptions`,
   `patient_profiles`). View/Download buttons.

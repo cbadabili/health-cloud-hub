@@ -419,6 +419,39 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_bookable_doctors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          doctor_id: string
+          first_name: string | null
+          last_name: string | null
+          specialization: string | null
+          consultation_fee: number | null
+          telehealth_enabled: boolean | null
+        }[]
+      }
+      doctor_booked_slots: {
+        Args: {
+          _doctor_id: string
+          _from: string
+          _to: string
+        }
+        Returns: string[]
+      }
+      book_appointment: {
+        Args: {
+          _doctor_id: string
+          _starts_at: string
+          _reason: string
+        }
+        Returns: string
+      }
+      cancel_my_appointment: {
+        Args: {
+          _appointment_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "super_admin" | "doctor" | "patient"
