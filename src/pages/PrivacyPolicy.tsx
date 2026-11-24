@@ -154,8 +154,8 @@ const PrivacyPolicy = () => {
           </li>
           <li>
             <strong>Service providers who run Clinithetics for us,</strong> under contracts that require
-            them to protect your information: Supabase (database, sign-in and file storage) and Vercel
-            (website hosting).
+            them to protect your information: Microsoft Azure (hosting for our database, sign-in and
+            file storage) and Vercel (website hosting).
           </li>
           <li>
             <strong>Authorities,</strong> only where the law requires it, such as a court order, or to
@@ -167,7 +167,7 @@ const PrivacyPolicy = () => {
       <Section id="where-stored" title="Where it's stored">
         <p>
           Your information is stored with our service providers at:{" "}
-          <Fact value={cfg.hostingLocations} label="hosting regions for Supabase and Vercel" />.
+          <Fact value={cfg.hostingLocations} label="hosting regions for Azure and Vercel" />.
         </p>
         <p>
           If information is stored or processed outside South Africa or Botswana, we only do so where the

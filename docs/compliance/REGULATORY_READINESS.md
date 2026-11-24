@@ -69,14 +69,14 @@ sources disagree **[verify]**.
 | **Purpose & minimality** | s 10, 13, 15 | Purpose limitation & minimisation | 🟡 | Role-based dashboards limit what each role sees. No documented purposes, and some fields are broader than needed (e.g. free-text medical history). |
 | **Openness / privacy notice** | s 17–18 | Transparency duties | 🟡 | Draft privacy policy at `/privacy` (`src/pages/PrivacyPolicy.tsx`), linked from the footer and sign-up page. Business facts still to fill in are in `src/content/privacyPolicyConfig.ts` and show as "To confirm" until set. Needs legal review. No consent step at patient sign-up yet. |
 | **Access control** | s 19 | Security safeguards | 🟡 | Access is per practice and per role (owner, manager, receptionist, nurse, clinician, biller), optionally limited to sites, and enforced by row-level security in the database. Removing a staff role stops access on the next request. Staff must use **two-step sign-in (TOTP)** when the practice requires it (on by default). Clinicians also need an approved registration check (§5.2). Platform admins no longer have blanket access to clinical records. Still missing: session timeouts and a periodic access review. |
-| **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest is handled by the database host **[confirm on our Supabase plan]**. No field-level encryption for clinical notes. |
+| **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest: Azure encrypts managed disks and storage by default (platform-managed keys) for our self-hosted stack in South Africa North (`docs/deploy/AZURE_SELF_HOSTED.md`). Backups go to zone-redundant storage in the same region. No field-level encryption for clinical notes. |
 | **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | 🟡 | Append-only `audit_events` log: who created, changed or deleted patients, contacts, portal access, staff roles, invitations, appointments, notes, prescriptions and invoices, plus every time a patient record is opened and every merge (with reason). Entries hold ids and changed field names, never record contents, and can't be edited or deleted. Owners and managers can read it in the app. Still missing: exports (none exist yet), failed-access logging, retention period for the log itself. |
-| **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Supabase, Vercel). |
+| **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Microsoft Azure for hosting, Vercel for the static app, the auth email provider). |
 | **Breach notification** | s 22: Regulator and data subjects "as soon as reasonably possible". Reported through the Information Regulator's eServices portal (mandatory since 1 April 2025). | Notify the IDPC within **72 hours** of becoming aware, unless the breach is unlikely to create a risk; notify affected people without undue delay **[verify]** | ❌ | No incident response plan, owner or contact list. |
 | **Data subject rights (access, correction, deletion)** | s 23–25 | Access, rectification, erasure, objection | 🟡 | Patients can view their records in the portal. No export, correction request or deletion flow. |
 | **Retention & deletion** | s 14 | Storage limitation | ❌ | No retention periods or automatic deletion. This includes doctor registration certificates in the `doctor-certificates` bucket. Note: health record retention rules (e.g. HPCSA guidance) may require keeping records for years. Define per record type. |
 | **Information Officer / DPO** | s 55–56: register the Information Officer with the Information Regulator | A DPO is required for large-scale processing of sensitive data; sources disagree on whether to register or notify the IDPC **[verify]** | ❌ | No named officer for either country. |
-| **Cross-border transfers** | s 72. Prior authorisation (s 57) may be needed to send special personal information to a country without adequate protection. | Transfers outside Botswana are restricted. Sources say **a copy must remain in Botswana**, and sensitive data may need prior Commission approval **[verify]** | ❌ | **Hosting region unknown.** If Supabase or Vercel store data outside SA or Botswana, these rules apply. The Botswana copy requirement could need an in-country replica. |
+| **Cross-border transfers** | s 72. Prior authorisation (s 57) may be needed to send special personal information to a country without adequate protection. | Transfers outside Botswana are restricted. Sources say **a copy must remain in Botswana**, and sensitive data may need prior Commission approval **[verify]** | 🟡 | **Decided: patient data is hosted in Azure South Africa North (Johannesburg)**, on a Supabase stack we run ourselves (`docs/deploy/AZURE_SELF_HOSTED.md`). Vercel serves only the static app; the browser talks to Azure directly. Open: Botswana patients' data is stored in South Africa, so the Botswana "copy must remain in Botswana" rule and any IDPC approval still apply. Azure has no Botswana region, so an in-country replica would need a Botswana host. Also check the auth email provider's data location. |
 | **Accountability / documentation** | s 8 | Accountability | ❌ | No processing register, risk assessment or policies. |
 
 ---
@@ -160,7 +160,7 @@ Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
 3. ~~Add an append-only audit log~~ done for views, edits and admin actions
    (`audit_events`); add export events when exports are built.
 3a. ~~Staff two-step sign-in~~ done (TOTP, required per practice by default);
-   enable TOTP MFA in Supabase Auth settings in production.
+   enable TOTP MFA in the self-hosted Auth service in production (`docs/deploy/AZURE_SELF_HOSTED.md` §4).
 4. Build patient data rights flows: export, correction request, deletion
    request.
 5. Add a consent and notice step at patient sign-up, linked to a real privacy
@@ -171,10 +171,11 @@ Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
 Founder / legal:
 1. Confirm our role (operator/processor vs responsible party/controller) for
    each kind of data.
-2. **Find out where data is hosted** (Supabase project region, Vercel
-   functions/logs). Decide on SA and Botswana data residency. Check the
-   Botswana "copy must remain in Botswana" rule.
-3. Sign data processing agreements with Supabase and Vercel. Create a
+2. ~~Decide where data is hosted~~ decided: Azure South Africa North,
+   self-hosted. Still check the Botswana "copy must remain in Botswana" rule
+   and Vercel's logs (static app only).
+3. Sign data processing agreements with Microsoft (Azure), Vercel and the
+   auth email provider. Create a
    template operator agreement for practices.
 4. Appoint and register an Information Officer (SA) and a DPO (Botswana).
 5. Fill in the gaps in the draft privacy policy (`src/content/privacyPolicyConfig.ts`) and have it

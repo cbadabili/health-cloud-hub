@@ -29,8 +29,11 @@ export const privacyPolicyConfig = {
   /** Data Protection Officer for Botswana (DPA 2024): name and email. */
   botswanaDataProtectionOfficer: null as string | null,
 
-  /** Where data is stored, e.g. "Supabase (AWS eu-west-2, London) and Vercel (global edge network)". */
-  hostingLocations: null as string | null,
+  /** Where data is stored. Patient data: Azure South Africa North (see docs/deploy/AZURE_SELF_HOSTED.md). */
+  hostingLocations:
+    "Microsoft Azure, South Africa North region (Johannesburg), for all patient and account data; the website itself is served by Vercel's global network, which does not store your health information" as
+      | string
+      | null,
 
   /** How long each kind of information is kept. */
   retention: {
