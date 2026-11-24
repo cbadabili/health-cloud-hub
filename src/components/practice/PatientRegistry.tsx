@@ -72,7 +72,7 @@ const PatientRegistry = () => {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Search patients"
-            placeholder="Search by name, mobile, ID number or date of birth (YYYY-MM-DD)"
+            placeholder="Name, mobile, ID or birth date (YYYY-MM-DD)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-9"

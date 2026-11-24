@@ -48,9 +48,17 @@ export const ID_TYPE_LABELS: Record<NationalIdType, string> = {
 const CURRENCY_LOCALE: Record<CurrencyCode, string> = { BWP: "en-BW", ZAR: "en-ZA" };
 
 /** "P450.00" (BWP) or "R 450,00" (ZAR), in the currency's own convention. */
-export const formatMoney = (amount: number | null | undefined, currency: CurrencyCode): string => {
+export const formatMoney = (
+  amount: number | null | undefined,
+  currency: CurrencyCode,
+  { whole = false }: { whole?: boolean } = {},
+): string => {
   if (amount === null || amount === undefined || Number.isNaN(Number(amount))) return "—";
-  return new Intl.NumberFormat(CURRENCY_LOCALE[currency], { style: "currency", currency }).format(Number(amount));
+  return new Intl.NumberFormat(CURRENCY_LOCALE[currency], {
+    style: "currency",
+    currency,
+    ...(whole && { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+  }).format(Number(amount));
 };
 
 /** Unambiguous date in the practice's time zone, e.g. "26 Nov 2026". */
