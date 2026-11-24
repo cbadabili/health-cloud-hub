@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, Search, Plus, Edit, Eye, Calendar, Pill, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
 interface MedicalRecord {
@@ -72,14 +73,10 @@ const PatientRecords = () => {
 
       // Fetch patient profiles separately
       const patientIds = [...new Set(data?.map(record => record.patient_id) || [])];
-      let profiles: any[] = [];
+      let profiles: PatientContact[] = [];
       
       if (patientIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name, email')
-          .in('user_id', patientIds);
-        profiles = profilesData || [];
+        profiles = await fetchPatientContacts(patientIds);
       }
       
       const recordsWithProfiles = data?.map(record => ({
@@ -110,17 +107,7 @@ const PatientRecords = () => {
       const uniquePatientIds = [...new Set(appointments?.map(apt => apt.patient_id) || [])];
 
       if (uniquePatientIds.length > 0) {
-        const { data: patientsData, error: patientsError } = await supabase
-          .from('profiles')
-          .select(`
-            user_id,
-            first_name,
-            last_name,
-            email
-          `)
-          .in('user_id', uniquePatientIds);
-
-        if (patientsError) throw patientsError;
+        const patientsData = await fetchPatientContacts(uniquePatientIds);
         
         // Fetch patient profiles separately
         const { data: patientProfiles } = await supabase

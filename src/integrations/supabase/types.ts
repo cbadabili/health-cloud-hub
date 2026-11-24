@@ -446,6 +446,17 @@ export type Database = {
         }
         Returns: string
       }
+      doctor_patient_profiles: {
+        Args: {
+          _patient_ids: string[]
+        }
+        Returns: {
+          user_id: string
+          first_name: string | null
+          last_name: string | null
+          email: string
+        }[]
+      }
       cancel_my_appointment: {
         Args: {
           _appointment_id: string

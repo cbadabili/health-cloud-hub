@@ -86,15 +86,13 @@ adding a provider (e.g. Daily, Twilio, Jitsi):
 analytics, API access), change it back to a plain string in the same PR.
 Never advertise a feature that customers can't use yet.
 
-### 0c. Doctors can't read their patients' names
-The `profiles` table only lets users read their own row (plus super_admins),
-so every doctor screen that looks up patient names gets nothing back
-(`AppointmentScheduler`, `PatientRecords`, `PrescriptionManager`,
-`TelehealthSession`; telehealth falls back to "Patient"). Add a narrowly scoped
-policy or `SECURITY DEFINER` function that returns first/last name only for
-patients who have an appointment with the calling, verified doctor
-(`public.is_verified_doctor(auth.uid())`), and don't expose emails or other
-fields unless needed.
+### 0c. Doctors can read their patients' names (done)
+`supabase/migrations/20261124110000-doctor-patient-names.sql` adds
+`public.doctor_patient_profiles(ids)`: first name, last name and email only,
+for patients with an appointment, record, prescription or invoice with the
+calling verified doctor. Doctor screens use `fetchPatientContacts` in
+`src/lib/doctorPatients.ts`; don't query `profiles` directly for patients, and
+don't widen the `profiles` RLS policies.
 
 ### 1. Wire up the core doctor actions
 Files in `src/components/doctor/` already read from Supabase, but their

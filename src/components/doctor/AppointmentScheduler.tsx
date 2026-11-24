@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, Video, Search, Plus, Edit, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
 interface Appointment {
@@ -49,14 +50,10 @@ const AppointmentScheduler = () => {
 
       // Fetch patient profiles separately
       const patientIds = [...new Set(data?.map(apt => apt.patient_id) || [])];
-      let profiles: any[] = [];
+      let profiles: PatientContact[] = [];
       
       if (patientIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name, email')
-          .in('user_id', patientIds);
-        profiles = profilesData || [];
+        profiles = await fetchPatientContacts(patientIds);
       }
       
       const appointmentsWithProfiles = data?.map(apt => ({
