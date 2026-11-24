@@ -7,6 +7,7 @@ import DeviceCheck from "@/components/telehealth/DeviceCheck";
 import VideoComingSoon from "@/components/telehealth/VideoComingSoon";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
 interface TelehealthAppointment {
@@ -48,14 +49,10 @@ const TelehealthSession = () => {
 
       // Fetch patient profiles separately
       const patientIds = [...new Set(data?.map(apt => apt.patient_id) || [])];
-      let profiles: { user_id: string; first_name: string | null; last_name: string | null; email: string }[] = [];
+      let profiles: PatientContact[] = [];
       
       if (patientIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name, email')
-          .in('user_id', patientIds);
-        profiles = profilesData || [];
+        profiles = await fetchPatientContacts(patientIds);
       }
       
       const appointmentsWithProfiles = data?.map(apt => ({
