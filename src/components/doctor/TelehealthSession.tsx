@@ -6,6 +6,7 @@ import { Video, Clock } from "lucide-react";
 import DeviceCheck from "@/components/telehealth/DeviceCheck";
 import VideoComingSoon from "@/components/telehealth/VideoComingSoon";
 import { supabase } from "@/integrations/supabase/client";
+import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
@@ -65,7 +66,7 @@ const TelehealthSession = () => {
       toast({
         variant: "destructive",
         title: "Error fetching telehealth appointments",
-        description: error instanceof Error ? error.message : "Please try again."
+        description: errorMessage(error)
       });
     } finally {
       setLoading(false);

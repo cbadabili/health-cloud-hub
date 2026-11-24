@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Search, Plus, Edit, Eye, Calendar, Pill, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
+import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +19,7 @@ interface MedicalRecord {
   diagnosis: string | null;
   consultation_notes: string | null;
   treatment_plan: string | null;
-  vital_signs: any;
+  vital_signs: Json | null;
   created_at: string;
   profiles?: {
     first_name: string | null;
@@ -85,11 +87,11 @@ const PatientRecords = () => {
       })) || [];
       
       setMedicalRecords(recordsWithProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching medical records",
-        description: error.message
+        description: errorMessage(error)
       });
     }
   };
@@ -123,11 +125,11 @@ const PatientRecords = () => {
         
         setMyPatients(patientsWithProfiles);
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching patients",
-        description: error.message
+        description: errorMessage(error)
       });
     } finally {
       setLoading(false);

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreditCard, Download, Receipt, DollarSign, Calendar, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,8 +52,8 @@ const PaymentHistory = () => {
       
       // Fetch doctor profiles and doctor info separately
       const doctorIds = [...new Set(data?.map(inv => inv.doctor_id) || [])];
-      let doctorProfiles: any[] = [];
-      let profiles: any[] = [];
+      let doctorProfiles: { user_id: string; specialization: string | null }[] = [];
+      let profiles: { user_id: string; first_name: string | null; last_name: string | null }[] = [];
       
       if (doctorIds.length > 0) {
         const [docProfilesResponse, profilesResponse] = await Promise.all([
@@ -71,11 +72,11 @@ const PaymentHistory = () => {
       })) || [];
       
       setInvoices(invoicesWithProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching invoices",
-        description: error.message
+        description: errorMessage(error)
       });
     } finally {
       setLoading(false);

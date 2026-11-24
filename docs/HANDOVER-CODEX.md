@@ -77,8 +77,10 @@ npm install
 npm run dev
 ```
 
-**Before every PR:** `npx tsc -p tsconfig.app.json --noEmit`, `npm run lint`
-(26 existing problems; don't add new ones), `npm run build`.
+**Before every PR** (CI runs all of these in `.github/workflows/ci.yml`):
+`npx tsc -p tsconfig.app.json --noEmit`, `npm run lint` (0 errors; keep it
+that way), `npm run build`, and `scripts/test-db.sh` (needs a local Postgres
+15+; set `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD` for a superuser).
 
 **Schema.** Tables: `profiles`, `user_roles`, `doctor_profiles`,
 `patient_profiles`, `appointments`, `medical_records`, `prescriptions`,
@@ -103,11 +105,14 @@ payments/payouts or medical-aid claims.
      `auth.uid()`) over widening table policies. Return only the columns a
      screen needs.
    - Don't query `profiles` directly for other users, and don't widen its RLS.
-3. **Test RLS changes against a real Postgres**: apply all migrations on a
-   scratch database with a minimal `auth` schema (`auth.users`, `auth.uid()`
-   reading `request.jwt.claim.sub`), then run queries as `SET ROLE
-   authenticated` with different users. Cover the allowed case, the
-   cross-user case, unverified doctors and anonymous callers.
+3. **Every migration ships with tests** in `supabase/tests/NN_name.test.sql`,
+   using the helpers in `supabase/tests/setup/10_test_helpers.sql`
+   (`tests.create_user`, `tests.login(id[, 'aal2'])`, `tests.anon()`,
+   `tests.ok`, `tests.is`, `tests.throws`). Cover the allowed case, the
+   cross-user case, unverified doctors and anonymous callers. Concurrency
+   checks go in `supabase/tests/concurrency/*.sh`. `scripts/test-db.sh`
+   applies every migration to a scratch database and runs each test file in
+   its own copy.
 4. **Make migrations idempotent** (`CREATE OR REPLACE`, `IF NOT EXISTS`,
    `DROP POLICY IF EXISTS`), with a header comment saying what it does and
    what it requires.

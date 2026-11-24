@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pill, Plus, Search, Edit, Eye, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
@@ -64,11 +65,11 @@ const PrescriptionManager = () => {
       })) || [];
       
       setPrescriptions(prescriptionsWithProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching prescriptions",
-        description: error.message
+        description: errorMessage(error)
       });
     } finally {
       setLoading(false);
@@ -92,11 +93,11 @@ const PrescriptionManager = () => {
         title: "Prescription updated",
         description: `Status changed to ${status}`
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error updating prescription",
-        description: error.message
+        description: errorMessage(error)
       });
     }
   };
