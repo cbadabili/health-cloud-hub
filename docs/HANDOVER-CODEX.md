@@ -1,214 +1,175 @@
-# Handover: functional work for Codex
+# Handover: building on the practice platform
 
-Clinithetics is a React + Vite + Supabase EMR and billing app for practices in
-South Africa and Botswana. The visual, UX, legal-page and security groundwork
-is done. What remains is **functional**: wiring up buttons that do nothing and
-replacing hardcoded demo data with real data.
+Clinithetics is a React + Vite + Supabase **practice management system** for
+independent clinics in **Botswana and South Africa**. Reception, nurses,
+clinicians, billers and managers work on one shared patient record per
+practice. A patient portal runs alongside it.
 
-Read the **Ground rules** before changing anything that touches the database.
+The product plan is in the PRD (Draft v1.0, 24 Nov 2026). Increment 1
+(foundation) is done. Read **Ground rules** before touching the database.
 
 ---
 
-## Current state (don't redo)
+## The model (Increment 1)
 
-**UI**
-- Responsive dashboards (icon-only header buttons on phones, tab rows scroll
-  sideways, grid "tables" scroll inside their card, stat cards 2-up on phones).
-- Dark mode via `next-themes` with a branded palette in `src/index.css` and a
-  `ThemeToggle` on every header. Use theme tokens (`bg-background`,
-  `text-muted-foreground`, …) or add `dark:` variants for hardcoded colours.
-- Landing CTAs open `/auth?mode=signup&role=doctor|patient`.
-- Landing claims are honest: no user counts or testimonials; POPIA & DPA
-  "built for", never "compliant". Unbuilt plan features are tagged
-  `soon("…")` in `src/components/Pricing.tsx`.
-- `/privacy` and `/terms` use `src/components/legal/LegalPage.tsx`; business
-  facts live in `src/content/companyConfig.ts`, `privacyPolicyConfig.ts` and
-  `termsConfig.ts` (unset values render as "To confirm" markers).
+```
+tenants ─ practices ─ sites ─ rooms
+              │
+              ├─ staff_memberships (user × role, all_sites or membership_sites) ─ providers (clinicians)
+              ├─ staff_invitations (hashed one-time tokens, 7 days)
+              ├─ patients (practice records; no login needed) ─ patient_contacts
+              │      └─ patient_portal_links (pending → verified by reception)
+              ├─ appointments · medical_records · prescriptions · invoices
+              └─ audit_events (append-only)
+```
 
-**Security and data**
-- Sign-up can only self-select `patient` or `doctor`; `super_admin` is granted
-  by hand.
-- **Doctor verification:** `doctor_verifications` (HPCSA/BHPC, status,
-  certificate). Every doctor RLS policy requires
-  `public.is_verified_doctor(auth.uid())`. Unapproved doctors see
-  `DoctorVerificationGate`; admins review in the **Verifications** tab.
-  Certificates are in the private `doctor-certificates` bucket under
-  `<doctor id>/`, opened only via 60-second signed URLs (`openCertificate`).
-- **Patient booking is real** (`AppointmentBooking.tsx`), via server-side
-  functions `list_bookable_doctors`, `doctor_booked_slots`, `book_appointment`
-  (in-person only, double-booking safe) and `cancel_my_appointment`.
-- **Doctors see their patients' names and emails** via
-  `doctor_patient_profiles(ids)` and `fetchPatientContacts`
-  (`src/lib/doctorPatients.ts`).
-- **Telehealth is honest:** no video provider yet. Both telehealth tabs show
-  real telehealth appointments tagged "Video coming soon", a
-  `VideoComingSoon` notice, and a working camera/microphone check
-  (`src/components/telehealth/DeviceCheck.tsx`). `vercel.json` allows
-  `camera=(self), microphone=(self)`.
+- **Country is a practice setting.** `practices.country` (`BW` | `ZA`) fixes
+  currency (`BWP` | `ZAR`) and time zone at creation. Never hardcode R, P, a
+  time zone or an ID type: use `src/lib/locale.ts` (`COUNTRIES`,
+  `formatMoney`, `formatDate`/`formatTime`/`formatDateTime(iso, tz)`,
+  `formatCalendarDate` for birth dates, `normalizePhone` → E.164,
+  `checkNationalId`, `zonedTimeToDate`).
+- **Roles are per practice:** `owner`, `manager`, `receptionist`, `nurse`,
+  `clinician`, `biller` (`practice_role`). One person can hold several.
+  `user_roles` (`app_role`) is only for platform level: `super_admin`, and
+  `doctor`/`patient` at sign-up.
+- **Clinicians** get a `providers` row. Clinical writes also need an approved
+  `doctor_verifications` row (`is_verified_doctor`).
+- **Patients are records, not logins.** Every clinical and billing foreign key
+  is `ON DELETE RESTRICT`. A portal user sees a patient only through a
+  `verified` `patient_portal_links` row (or the record they created by booking
+  online, until reception verifies it).
+- **Staff MFA:** when `practices.require_mfa` (default true), staff policies
+  require an `aal2` session. `StaffMfaGate` handles TOTP enrolment and challenge.
+
+### Database helpers (use these in every new policy)
+| Helper | Meaning |
+|---|---|
+| `has_practice_role(practice, roles[] = any)` | Active membership with one of the roles **and** MFA satisfied |
+| `can_access_site(site, roles)` / `can_access_row(practice, site, roles)` | Same, plus the member's site scope |
+| `is_practice_clinician(practice)` | Clinician role + verified registration |
+| `my_provider_id(practice)` | The caller's provider id there |
+| `is_portal_patient(patient)` | The caller is linked to this patient record |
+| `is_staff_mfa_ok(practice)` | `aal2`, or the practice doesn't require MFA |
+
+### Functions the app calls
+`my_practices`, `create_practice`, `invite_staff`, `revoke_invitation`,
+`invitation_preview` (anon), `accept_invitation`, `deactivate_staff`,
+`set_staff_sites`, `practice_staff_directory`, `register_patient` (returns
+possible duplicates unless `_confirm_new`), `find_patient_duplicates`,
+`merge_patients`, `verify_portal_link`, `log_patient_view`, and for the portal
+`list_bookable_providers`, `provider_booked_slots`, `book_appointment`,
+`cancel_my_appointment`. Error codes they raise are mapped to friendly text in
+`practiceErrorMessage` (`src/lib/practice.ts`) and `bookingErrorMessage`
+(`src/lib/booking.ts`).
+
+### App structure
+- `src/hooks/usePractice.tsx`: current practice, roles, `provider_id`,
+  `hasRole(...)`, practice switcher state.
+- `src/pages/Dashboard.tsx` routes: any membership → `StaffWorkspace`;
+  `super_admin` → admin; verified doctor without a practice → `/onboarding`;
+  otherwise the patient portal.
+- `src/pages/practice/`: `StaffWorkspace` (tabs by role), `Onboarding`,
+  `AcceptInvite` (`/invite/:token`).
+- `src/components/practice/`: `PatientRegistry`, `RegisterPatientDialog`,
+  `PatientDetailSheet` (details, contacts, portal links, timeline, merge),
+  and `admin/` (`StaffAdmin`, `SitesAdmin`, `PracticeSettings`, `AuditLog`).
+- Doctor screens (`src/components/doctor/`) filter by the clinician's
+  `provider_id`. Portal screens (`src/components/patient/`) find the user's
+  patient ids with `myPortalPatientIds`.
+- Plan prices live in `src/config/pricing.ts` per currency. `null` shows
+  "Contact us".
 
 ---
 
 ## Before you start
 
 **Database migrations.** The founder applies migrations by hand in the
-Supabase SQL Editor, so production may lag the repo. Apply in this order:
+Supabase SQL Editor, in filename order. Increment 1 adds
+`20261125090000-tenancy-foundation.sql`. **It wipes test rows in
+appointments, medical records, prescriptions and invoices** on its first run
+(there is no production data yet). After applying it:
+- enable **TOTP MFA** in Supabase Auth settings;
+- regenerate `src/integrations/supabase/types.ts` (or edit by hand).
 
-1. `20261123180000-restrict-signup-roles.sql`
-2. `20261123200000-doctor-verification.sql`
-3. `20261123210000-doctor-certificates.sql`
-4. `20261124090000-patient-booking.sql`
-5. `20261124110000-doctor-patient-names.sql`
+The app shows "Practice features aren't switched on yet" when `my_practices`
+is missing. Keep doing this for new migrations: an honest "not available yet"
+state, never a broken screen.
 
-The app degrades gracefully when a migration is missing (see
-`isVerificationTableMissing` in `src/lib/doctorVerification.ts` and
-`isBookingNotSetUp` in `src/lib/booking.ts`). Do the same for new migrations:
-show an honest "not available yet" state, never a broken screen.
-
-**Run locally.** The Supabase client throws on load without env vars, so
-create `.env.local`:
-
-```
-VITE_SUPABASE_URL=<project url>
-VITE_SUPABASE_ANON_KEY=<anon key>
-```
-
-```bash
-npm install
-npm run dev
-```
+**Run locally.** Create `.env.local` with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_ANON_KEY`, then `npm install && npm run dev`.
 
 **Before every PR** (CI runs all of these in `.github/workflows/ci.yml`):
-`npx tsc -p tsconfig.app.json --noEmit`, `npm run lint` (0 errors; keep it
-that way), `npm run build`, and `scripts/test-db.sh` (needs a local Postgres
-15+; set `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD` for a superuser).
-
-**Schema.** Tables: `profiles`, `user_roles`, `doctor_profiles`,
-`patient_profiles`, `appointments`, `medical_records`, `prescriptions`,
-`invoices`, `doctor_verifications`. Types are in
-`src/integrations/supabase/types.ts`; update them by hand when you add tables
-or functions. There are **no tables yet** for subscriptions, platform
-payments/payouts or medical-aid claims.
+`npx tsc -p tsconfig.app.json --noEmit`, `npm run lint` (0 errors),
+`npm test` (vitest), `npm run build`, and `scripts/test-db.sh` (needs a local
+Postgres 15+ superuser via `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`).
 
 ---
 
 ## Ground rules
 
-1. **Never show success for something that didn't happen.** Show a success
-   message only after the database confirms; otherwise show a clear error.
-   Until a feature works, hide its button or mark it "Coming soon".
-2. **Enforce access in the database, not just the UI.** Anyone can call
-   Supabase directly with the public anon key.
-   - Never derive roles or permissions from `user_metadata`.
-   - New doctor-facing policies must require `public.is_verified_doctor(auth.uid())`.
-   - Prefer narrowly scoped `SECURITY DEFINER` functions (with
-     `SET search_path = ''`, `REVOKE … FROM PUBLIC, anon`, and checks on
-     `auth.uid()`) over widening table policies. Return only the columns a
-     screen needs.
-   - Don't query `profiles` directly for other users, and don't widen its RLS.
-3. **Every migration ships with tests** in `supabase/tests/NN_name.test.sql`,
-   using the helpers in `supabase/tests/setup/10_test_helpers.sql`
-   (`tests.create_user`, `tests.login(id[, 'aal2'])`, `tests.anon()`,
-   `tests.ok`, `tests.is`, `tests.throws`). Cover the allowed case, the
-   cross-user case, unverified doctors and anonymous callers. Concurrency
-   checks go in `supabase/tests/concurrency/*.sh`. `scripts/test-db.sh`
-   applies every migration to a scratch database and runs each test file in
-   its own copy.
-4. **Make migrations idempotent** (`CREATE OR REPLACE`, `IF NOT EXISTS`,
-   `DROP POLICY IF EXISTS`), with a header comment saying what it does and
-   what it requires.
-5. **Pricing labels:** when you ship a feature tagged `soon("…")` in
-   `Pricing.tsx`, make it a plain string in the same PR.
-6. **Legal pages:** don't change policy or terms wording without legal
-   sign-off; only the config facts.
+1. **Never show success for something that didn't happen.** Success only
+   after the database confirms. Until a feature works, hide its button or mark
+   it "Coming soon".
+2. **Every practice-scoped table has `practice_id` and RLS via the helpers
+   above.** Rows with a site also check site scope. Add the table to
+   `enforce_same_practice` (cross-practice references are rejected) and to
+   the `audit_row_change` trigger.
+3. **Enforce access in the database, not the UI.** Anyone can call Supabase
+   with the anon key. Never derive permissions from `user_metadata`. Prefer
+   narrow `SECURITY DEFINER` functions (`SET search_path = ''`, `REVOKE …
+   FROM PUBLIC, anon`, checks on `auth.uid()`), and column-level `GRANT
+   UPDATE (…)` for fields staff may edit directly.
+4. **Audit, never log content.** Audit rows hold ids, action and changed
+   column names only. Reads that matter (opening a chart) call
+   `log_patient_view`. `audit_events` is append-only; don't add update or
+   delete paths.
+5. **No cascades onto clinical or financial history.** Foreign keys from
+   those tables are `ON DELETE RESTRICT`.
+6. **Every migration ships with tests** in `supabase/tests/NN_name.test.sql`
+   (`tests.create_user`, `tests.add_staff(practice, user, role, sites)`,
+   `tests.login(id[, 'aal2'])`, `tests.anon()`, `tests.ok/is/throws`). Cover:
+   the allowed role, a disallowed role, another practice, another site,
+   `aal1` when MFA is required, deactivated staff, unverified clinicians and
+   anonymous callers. See `06_tenancy_foundation.test.sql`.
+7. **Idempotent migrations** with a header comment (what and why).
+8. **Pricing labels:** when you ship a `soon("…")` feature in `Pricing.tsx`,
+   make it a plain string in the same PR.
+9. **Legal pages:** change only config facts without legal sign-off.
 
 ---
 
-## Tasks, in priority order
+## Next increments (from the PRD)
 
-### 1. Wire up the core doctor actions
-Files in `src/components/doctor/` read real data, but their create/edit
-buttons do nothing.
-
-| Component | Buttons to implement | Database note |
+| # | Scope | Notes |
 |---|---|---|
-| `AppointmentScheduler.tsx` | New Appointment, per-row status change (completed / no-show / cancelled), edit | **Doctors have no INSERT policy on `appointments`.** Add a `SECURITY DEFINER` function like `book_appointment`, for a patient the doctor already treats, reusing the same double-booking lock. Doctors already have an UPDATE policy. |
-| `PatientRecords.tsx` | New Record (dialog + insert into `medical_records`), View, Edit | The existing `FOR ALL` policy only checks `doctor_id = auth.uid()` and verification, not that the patient belongs to the doctor. Restrict inserts to patients with a care relationship, like `doctor_patient_profiles`. |
-| `PrescriptionManager.tsx` | New Prescription, View, Edit, Refill/Cancel | Same patient-relationship gap as medical records. |
+| 2 | **Front desk:** diary per provider and room, walk-ins, reschedule/cancel, check-in, no-show, Today/waiting queue, staff booking for any patient | Reuse `book_appointment`'s advisory lock; rooms with `exclusive` can't double-book |
+| 3 | **Encounters:** vitals, allergies, ICD-10 diagnoses, notes with versions/sign/amend, documents, printable prescription/referral | Nurses read clinical notes today; decide their write rights |
+| 4 | **Billing + cashier:** effective-dated tariffs per country/currency, invoice lines with tariff snapshots, idempotency keys, credit notes, payments, allocations, cashier sessions, daily close | `invoices.currency` defaults from the practice |
+| 5 | **Claims:** manual claim tracking per invoice line, statuses, deadlines, rejections, exports, scheme catalogue per country | |
+| 6 | **Messaging + tasks:** outbox + worker (Edge Function + `pg_cron`), SMS/email per country, reminders, delivery log | Also send staff invitations by email (today the link is copied by hand) |
+| 7 | **Reports + data:** reports that reconcile to source, import dry-run, cutover reconciliation, portability export | |
 
-Use the existing `Dialog`, `Form` (react-hook-form + zod) and toast components
-in `src/components/ui/`. Validate with zod, show success or failure, and
-refresh the list after a write.
-
-### 2. Replace hardcoded data with real data
-- `src/components/dashboards/DoctorDashboard.tsx` Overview: `todayStats`,
-  `upcomingAppointments`, "Recently Seen Patients". Derive them from the
-  doctor's appointments, records, prescriptions and invoices (patient names via
-  `fetchPatientContacts`). Today the overview says "12 appointments" while the
-  Appointments tab says 0.
-- `src/components/dashboards/PatientDashboard.tsx` Overview: stat cards,
-  upcoming appointments (reuse the booking functions and `src/lib/booking.ts`),
-  recent activity. **Remove the "Health Score" card**: it has no data source
-  and is misleading in a clinical product.
-- `src/components/patient/MedicalRecords.tsx`: records, prescriptions,
-  allergies (from `medical_records`, `prescriptions`, `patient_profiles`), and
-  the View/Download buttons.
-- `src/components/patient/PaymentHistory.tsx`: check it against `invoices`.
-  Payments aren't implemented, so don't show "Pay" actions that do nothing.
-- `src/components/dashboards/SuperAdminDashboard.tsx`: overview stats and
-  activity feed.
-
-Empty lists get a friendly empty state with the next action, e.g. "No
-appointments yet. Book one."
-
-### 3. Telehealth video (needs a provider decision from the founder)
-When a provider is chosen (e.g. Daily, Twilio, Jitsi):
-- Add its origins to the CSP in `vercel.json` (`connect-src`, `frame-src`,
-  `media-src` as needed). If it runs in an iframe, delegate permissions with
-  `camera=(self "https://provider.origin")` and `allow="camera; microphone"`.
-- Reuse `DeviceCheck` as the pre-call check.
-- Let patients book telehealth appointments (`book_appointment` is
-  in-person only).
-- Add consultation notes (persist to `medical_records.consultation_notes`).
-- Remove the "Video coming soon" tags and the `soon()` pricing labels for
-  telehealth.
-
-### 4. Admin modules (needs schema work first)
-`SubscriptionManagement.tsx`, `PaymentsModule.tsx` and `ClaimsMonitoring.tsx`
-are entirely hardcoded, with no tables behind them. Propose migrations with
-RLS restricted to `super_admin` (via `has_role`) before building UI. Until
-then, hide or mark "Coming soon" the buttons that do nothing: Export, Filter,
-View, Edit, Retry, Refund, Process Payout, Approve, Reject.
-`UserManagement.tsx`: Add New User and per-row actions.
-
-### 5. Small fixes
-- `src/components/Header.tsx`: "Profile" menu item has no action. Add a
-  profile page or remove it.
-- `src/components/Footer.tsx`: 9 product/support links still use `href="#"`.
-  Hide them until the pages exist. The phone number `+27 (0) 11 123 4567`
-  looks like a placeholder; confirm with the founder or remove it.
-- `src/integrations/supabase/client.ts`: render a clear configuration error
-  screen instead of throwing at import time.
-- Icon-only buttons in `doctor/`, `patient/` and `admin/` need an `aria-label`.
-
-### Open compliance items (founder / legal, not code)
-See `docs/compliance/REGULATORY_READINESS.md`: audit logging, retention
-periods, Information Officer / DPO, hosting region and cross-border transfers,
-breach response plan. Audit logging is engineering work once the founder
-confirms scope.
+Known gaps left from Increment 1:
+- `SuperAdminDashboard` and its admin modules still show hardcoded numbers;
+  platform admins no longer have blanket access to clinical tables by design.
+- `PatientDashboard` overview and `patient/MedicalRecords.tsx` still need
+  re-pointing to portal links (the Appointments, Telehealth and Payments tabs
+  are done).
+- Doctor create/edit buttons in `AppointmentScheduler`, `PatientRecords`,
+  `PrescriptionManager` still do nothing (Increments 2–3).
+- Nurses (no provider record) don't get the clinical tabs yet.
+- Telehealth video has no provider; keep "Video coming soon".
 
 ---
 
 ## UI conventions (keep mobile working)
 
-- Page padding: `p-4 sm:p-6`.
-- Stat card grids: `grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4`.
-- List rows with actions:
-  `flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg`.
-- Search + button bars: `flex flex-col sm:flex-row gap-3 sm:gap-4`.
-- Grid "tables": wrapper `border rounded-lg overflow-x-auto`, each row
-  `grid grid-cols-N ... min-w-[NNrem]`.
-- Top-level tab lists:
-  `flex w-full justify-start overflow-x-auto md:grid md:grid-cols-N`.
-  `TabsList` in `src/components/ui/tabs.tsx` already scrolls sideways.
-- Check every new screen at 390px wide (iPhone) and on desktop, in light and
-  dark mode. Nothing should stick out past the card or the page edge.
+- Page padding: `px-4 sm:px-6`. Cards hold lists as
+  `divide-y divide-border rounded-lg border` rows that stack on phones
+  (`flex flex-col sm:flex-row`).
+- Top-level tabs scroll sideways on phones (see `StaffWorkspace`).
+- Dialogs: `max-h-[90vh] overflow-y-auto`; detail views use `Sheet`.
+- Use theme tokens (`bg-background`, `text-muted-foreground`, …) or `dark:`
+  variants.
+- Check every new screen at 390px wide and on desktop, in light and dark mode.
