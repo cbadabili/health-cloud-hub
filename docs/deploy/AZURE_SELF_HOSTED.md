@@ -17,7 +17,7 @@ Azure docs at set-up time. Both change often.
 ```
 Browser ──HTTPS──► Vercel (static React app, no patient data)
    │
-   └──HTTPS──► api.<domain>  (Azure, South Africa North)
+   └──HTTPS──► api.clinithetics.beedab.com  (Azure, South Africa North)
                  Caddy (TLS) ─► Supabase Kong gateway
                                  ├─ Auth (GoTrue: sign-in, TOTP two-step)
                                  ├─ REST (PostgREST: the app's queries and functions)
@@ -61,7 +61,7 @@ keys are optional later.
    <https://supabase.com/docs/guides/self-hosting/docker>.
 4. Point the Postgres and Storage volumes at `/srv/supabase/...`.
 5. Put **Caddy** (or Nginx + certbot) in front of Kong for TLS on
-   `api.<domain>`. Expose only Caddy; Kong, Postgres and Studio listen on
+   `api.clinithetics.beedab.com`. Expose only Caddy; Kong, Postgres and Studio listen on
    localhost.
 6. **Studio (the admin dashboard) is never public.** Reach it over Bastion /
    an SSH tunnel only.
@@ -77,9 +77,9 @@ Store them in Key Vault.
 | `JWT_SECRET` | 40+ random characters |
 | `ANON_KEY`, `SERVICE_ROLE_KEY` | JWTs signed with `JWT_SECRET` (Supabase docs show how to generate them). The **anon key** goes to Vercel; the **service role key** never leaves the server |
 | `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` | For Studio |
-| `SITE_URL` | `https://<app domain>` (used in sign-up and password emails) |
-| `ADDITIONAL_REDIRECT_URLS` | `https://<app domain>/invite/*` and any preview domains you use |
-| `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL` | `https://api.<domain>` |
+| `SITE_URL` | `https://clinithetics.beedab.com` (used in sign-up and password emails) |
+| `ADDITIONAL_REDIRECT_URLS` | `https://clinithetics.beedab.com/invite/*` and any preview domains you use |
+| `API_EXTERNAL_URL`, `SUPABASE_PUBLIC_URL` | `https://api.clinithetics.beedab.com` |
 | `SMTP_*` | A transactional email provider (sign-up confirmation, password reset). **[decide provider]** Check its data location too |
 | Email sign-up | On; email confirmation **on** |
 | TOTP MFA | Must be **enabled** for enrolment and verification in the Auth service. **[verify the exact `GOTRUE_MFA_*` variable names for the pinned version]** Staff can't get past the two-step screen without it |
@@ -105,12 +105,14 @@ Store them in Key Vault.
 
 ## 6. Point the app at Azure
 
-1. In Vercel, set `VITE_SUPABASE_URL=https://api.<domain>` and
+1. In Vercel, set `VITE_SUPABASE_URL=https://api.clinithetics.beedab.com` and
    `VITE_SUPABASE_ANON_KEY=<anon key>`, then redeploy.
-2. In `vercel.json`, change the CSP `connect-src` from
-   `https://*.supabase.co wss://*.supabase.co` to
-   `https://api.<domain> wss://api.<domain>`. **Until this is done, the
-   browser will block every API call.**
+2. ~~Update the CSP~~ done: `vercel.json` `connect-src` allows only
+   `https://api.clinithetics.beedab.com` and `wss://api.clinithetics.beedab.com`.
+   Supabase's cloud (`*.supabase.co`) is no longer allowed, so the app can
+   only talk to our Azure API. If the API address ever changes, update
+   `connect-src` in the same release, or the browser blocks every call.
+3. In Vercel, add `clinithetics.beedab.com` as the production domain.
 
 ## 7. Backups and restore (pilot gate)
 
@@ -137,7 +139,9 @@ Someone must own this: name a person and a backup.
 
 ## 9. Open questions (founder)
 
-1. **Domains:** app domain and API domain (`api.<domain>`).
+1. ~~Domains~~ decided: API `api.clinithetics.beedab.com`, app
+   `clinithetics.beedab.com`. Create the DNS records: an A record for the API
+   pointing at the VM's static public IP, and the app domain added in Vercel.
 2. **Botswana copy:** Azure has no Botswana region. If Botswana's DPA requires
    a copy kept in-country **[verify with counsel]**, add an encrypted backup
    replica at a Botswana host and get any IDPC approval before onboarding
