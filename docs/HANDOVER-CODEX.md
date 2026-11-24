@@ -66,11 +66,13 @@ platform payments/payouts, or medical-aid claims.
   `src/lib/doctorVerification.ts`).
 
 ### 0b. Telehealth video is not implemented yet
-`src/components/doctor/TelehealthSession.tsx` and
-`src/components/patient/TelehealthAccess.tsx` only toggle UI state. No
-`getUserMedia` or video provider exists, the "Ready" system checks are
-hardcoded, and the patient Telehealth tab's "Join Session" buttons go nowhere.
-Patient booking currently creates in-person appointments only. When adding a provider (e.g. Daily, Twilio, Jitsi):
+No video provider exists yet. The fake call screens and "Start/Join Session"
+buttons were removed: both telehealth tabs (`doctor/TelehealthSession.tsx`,
+`patient/TelehealthAccess.tsx`) show real telehealth appointments with a
+"Video coming soon" tag, an honest notice (`telehealth/VideoComingSoon.tsx`),
+and a real camera/microphone check (`telehealth/DeviceCheck.tsx`, reusable as
+a pre-call check). Patient booking creates in-person appointments only. When
+adding a provider (e.g. Daily, Twilio, Jitsi):
 - add its origins to the CSP in `vercel.json` (`connect-src`, `frame-src`,
   `media-src` as needed);
 - if it runs in an iframe, delegate permissions with
@@ -83,6 +85,16 @@ Patient booking currently creates in-person appointments only. When adding a pro
 ("Coming soon"). When you ship one of them (e.g. telehealth video, PMB claims,
 analytics, API access), change it back to a plain string in the same PR.
 Never advertise a feature that customers can't use yet.
+
+### 0c. Doctors can't read their patients' names
+The `profiles` table only lets users read their own row (plus super_admins),
+so every doctor screen that looks up patient names gets nothing back
+(`AppointmentScheduler`, `PatientRecords`, `PrescriptionManager`,
+`TelehealthSession`; telehealth falls back to "Patient"). Add a narrowly scoped
+policy or `SECURITY DEFINER` function that returns first/last name only for
+patients who have an appointment with the calling, verified doctor
+(`public.is_verified_doctor(auth.uid())`), and don't expose emails or other
+fields unless needed.
 
 ### 1. Wire up the core doctor actions
 Files in `src/components/doctor/` already read from Supabase, but their
