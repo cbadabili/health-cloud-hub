@@ -91,9 +91,9 @@ const PatientDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")} aria-label="Join Telehealth">
+            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")} aria-label="Telehealth">
               <Video className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Join Telehealth</span>
+              <span className="hidden sm:inline">Telehealth</span>
             </Button>
             <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>

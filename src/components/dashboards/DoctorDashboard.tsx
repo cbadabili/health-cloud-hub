@@ -85,9 +85,9 @@ const DoctorDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")} aria-label="Start Telehealth">
+            <Button variant="outline" size="sm" onClick={() => setActiveTab("telehealth")} aria-label="Telehealth">
               <Video className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Start Telehealth</span>
+              <span className="hidden sm:inline">Telehealth</span>
             </Button>
             <ThemeToggle />
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" asChild>
@@ -219,7 +219,7 @@ const DoctorDashboard = () => {
                       onClick={() => setActiveTab("telehealth")}
                     >
                       <Video className="h-6 w-6" />
-                      Start Video Call
+                      Telehealth
                     </Button>
                   </div>
                 </CardContent>

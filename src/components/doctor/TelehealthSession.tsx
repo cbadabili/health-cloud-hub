@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Video, Phone, MessageSquare, Clock, User, Camera, Mic, MicOff, VideoOff } from "lucide-react";
+import { Video, Clock } from "lucide-react";
+import DeviceCheck from "@/components/telehealth/DeviceCheck";
+import VideoComingSoon from "@/components/telehealth/VideoComingSoon";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -27,10 +27,7 @@ const TelehealthSession = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<TelehealthAppointment[]>([]);
-  const [activeSession, setActiveSession] = useState<TelehealthAppointment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isMicOn, setIsMicOn] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -51,7 +48,7 @@ const TelehealthSession = () => {
 
       // Fetch patient profiles separately
       const patientIds = [...new Set(data?.map(apt => apt.patient_id) || [])];
-      let profiles: any[] = [];
+      let profiles: { user_id: string; first_name: string | null; last_name: string | null; email: string }[] = [];
       
       if (patientIds.length > 0) {
         const { data: profilesData } = await supabase
@@ -67,31 +64,15 @@ const TelehealthSession = () => {
       })) || [];
       
       setAppointments(appointmentsWithProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching telehealth appointments",
-        description: error.message
+        description: error instanceof Error ? error.message : "Please try again."
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const startSession = (appointment: TelehealthAppointment) => {
-    setActiveSession(appointment);
-    toast({
-      title: "Session started",
-      description: `Video call with ${appointment.profiles?.first_name} ${appointment.profiles?.last_name}`
-    });
-  };
-
-  const endSession = () => {
-    setActiveSession(null);
-    toast({
-      title: "Session ended",
-      description: "Video call has been terminated"
-    });
   };
 
   const todayAppointments = appointments.filter(apt => {
@@ -118,87 +99,12 @@ const TelehealthSession = () => {
     );
   }
 
-  if (activeSession) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Video className="h-5 w-5" />
-                Video Session - {activeSession.profiles?.first_name} {activeSession.profiles?.last_name}
-              </div>
-              <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300">Live</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Video Area */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center relative">
-                  <User className="h-24 w-24 text-muted-foreground" />
-                  <div className="absolute bottom-4 right-4 w-32 h-24 bg-card border rounded-lg flex items-center justify-center">
-                    <User className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </div>
-                
-                {/* Video Controls */}
-                <div className="flex justify-center gap-4">
-                  <Button
-                    variant={isMicOn ? "default" : "destructive"}
-                    size="lg"
-                    onClick={() => setIsMicOn(!isMicOn)}
-                  >
-                    {isMicOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-                  </Button>
-                  <Button
-                    variant={isVideoOn ? "default" : "destructive"}
-                    size="lg"
-                    onClick={() => setIsVideoOn(!isVideoOn)}
-                  >
-                    {isVideoOn ? <Camera className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
-                  </Button>
-                  <Button variant="destructive" size="lg" onClick={endSession}>
-                    End Call
-                  </Button>
-                </div>
-              </div>
-              
-              {/* Session Info & Notes */}
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Session Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p><strong>Patient:</strong> {activeSession.profiles?.first_name} {activeSession.profiles?.last_name}</p>
-                    <p><strong>Reason:</strong> {activeSession.reason_for_visit}</p>
-                    <p><strong>Time:</strong> {new Date(activeSession.appointment_date).toLocaleString()}</p>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Session Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <textarea 
-                      className="w-full h-32 p-3 border border-input bg-background text-foreground placeholder:text-muted-foreground rounded-lg resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      placeholder="Add session notes..."
-                    />
-                    <Button className="mt-2 w-full">Save Notes</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
+      <VideoComingSoon audience="doctor" />
+
+      <DeviceCheck />
+
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -254,7 +160,7 @@ const TelehealthSession = () => {
                         </div>
                         <div>
                           <p className="font-medium">
-                            {appointment.profiles?.first_name} {appointment.profiles?.last_name}
+                            {[appointment.profiles?.first_name, appointment.profiles?.last_name].filter(Boolean).join(" ") || "Patient"}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {appointment.reason_for_visit}
@@ -263,10 +169,9 @@ const TelehealthSession = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">{appointment.status}</Badge>
-                        <Button onClick={() => startSession(appointment)}>
-                          <Video className="h-4 w-4 mr-2" />
-                          Start Session
-                        </Button>
+<span className="px-2 py-1 rounded-full text-xs border border-border text-muted-foreground whitespace-nowrap">
+                          Video coming soon
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -307,7 +212,7 @@ const TelehealthSession = () => {
                         </div>
                         <div>
                           <p className="font-medium">
-                            {appointment.profiles?.first_name} {appointment.profiles?.last_name}
+                            {[appointment.profiles?.first_name, appointment.profiles?.last_name].filter(Boolean).join(" ") || "Patient"}
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {appointment.reason_for_visit}
@@ -349,7 +254,7 @@ const TelehealthSession = () => {
                       </div>
                       <div>
                         <p className="font-medium">
-                          {appointment.profiles?.first_name} {appointment.profiles?.last_name}
+                          {[appointment.profiles?.first_name, appointment.profiles?.last_name].filter(Boolean).join(" ") || "Patient"}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {appointment.reason_for_visit}
@@ -358,11 +263,10 @@ const TelehealthSession = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{appointment.status}</Badge>
-                      {appointment.status === 'scheduled' && (
-                        <Button onClick={() => startSession(appointment)}>
-                          <Video className="h-4 w-4 mr-2" />
-                          Join
-                        </Button>
+                      {appointment.status === 'scheduled' && new Date(appointment.appointment_date) >= new Date() && (
+                        <span className="px-2 py-1 rounded-full text-xs border border-border text-muted-foreground whitespace-nowrap">
+                          Video coming soon
+                        </span>
                       )}
                     </div>
                   </div>
