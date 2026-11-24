@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pill, Plus, Search, Edit, Eye, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
-import { useAuth } from "@/hooks/useAuth";
+import { usePractice } from "@/hooks/usePractice";
+import { formatDate } from "@/lib/locale";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,24 +30,26 @@ interface Prescription {
 }
 
 const PrescriptionManager = () => {
-  const { user } = useAuth();
+  const { current } = usePractice();
+  const providerId = current?.provider_id ?? null;
+  const tz = current?.timezone ?? "Africa/Gaborone";
   const { toast } = useToast();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (user) {
+    if (providerId) {
       fetchPrescriptions();
     }
-  }, [user]);
+  }, [providerId]);
 
   const fetchPrescriptions = async () => {
     try {
       const { data, error } = await supabase
         .from('prescriptions')
         .select('*')
-        .eq('doctor_id', user?.id)
+        .eq('provider_id', providerId ?? '')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -61,7 +64,7 @@ const PrescriptionManager = () => {
       
       const prescriptionsWithProfiles = data?.map(presc => ({
         ...presc,
-        profiles: profiles.find(p => p.user_id === presc.patient_id)
+        profiles: profiles.find(p => p.id === presc.patient_id)
       })) || [];
       
       setPrescriptions(prescriptionsWithProfiles);
@@ -265,7 +268,7 @@ const PrescriptionManager = () => {
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {prescription.profiles?.first_name} {prescription.profiles?.last_name} • 
-                        {new Date(prescription.created_at).toLocaleDateString()}
+                        {formatDate(prescription.created_at, tz)}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {prescription.dosage} • {prescription.frequency}
@@ -307,7 +310,7 @@ const PrescriptionManager = () => {
                 {filteredPrescriptions.map((prescription) => (
                   <div key={prescription.id} className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] border-t hover:bg-muted/50">
                     <div className="text-sm">
-                      {new Date(prescription.created_at).toLocaleDateString()}
+                      {formatDate(prescription.created_at, tz)}
                     </div>
                     <div>
                       <div className="font-medium">

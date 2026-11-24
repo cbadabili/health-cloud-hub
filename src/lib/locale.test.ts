@@ -13,7 +13,7 @@ import {
 describe("formatMoney", () => {
   it("formats Pula and Rand in their own conventions", () => {
     expect(formatMoney(450, "BWP")).toMatch(/^P\s?450\.00$/);
-    expect(formatMoney(1250.5, "ZAR")).toMatch(/^R\s?1[\s ]?250,50$/);
+    expect(formatMoney(1250.5, "ZAR")).toMatch(/^R\s?1[\s\u00a0]?250,50$/);
   });
   it("shows a dash for missing amounts", () => {
     expect(formatMoney(null, "BWP")).toBe("—");

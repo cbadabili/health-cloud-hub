@@ -7,7 +7,8 @@ import DeviceCheck from "@/components/telehealth/DeviceCheck";
 import VideoComingSoon from "@/components/telehealth/VideoComingSoon";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
-import { useAuth } from "@/hooks/useAuth";
+import { usePractice } from "@/hooks/usePractice";
+import { formatDate } from "@/lib/locale";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,23 +27,25 @@ interface TelehealthAppointment {
 }
 
 const TelehealthSession = () => {
-  const { user } = useAuth();
+  const { current } = usePractice();
+  const providerId = current?.provider_id ?? null;
+  const tz = current?.timezone ?? "Africa/Gaborone";
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<TelehealthAppointment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (providerId) {
       fetchTelehealthAppointments();
     }
-  }, [user]);
+  }, [providerId]);
 
   const fetchTelehealthAppointments = async () => {
     try {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('doctor_id', user?.id)
+        .eq('provider_id', providerId ?? '')
         .ilike('appointment_type', '%telehealth%')
         .order('appointment_date', { ascending: true });
 
@@ -58,7 +61,7 @@ const TelehealthSession = () => {
       
       const appointmentsWithProfiles = data?.map(apt => ({
         ...apt,
-        profiles: profiles.find(p => p.user_id === apt.patient_id)
+        profiles: profiles.find(p => p.id === apt.patient_id)
       })) || [];
       
       setAppointments(appointmentsWithProfiles);
@@ -151,7 +154,7 @@ const TelehealthSession = () => {
                     <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                          {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                          {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
@@ -199,10 +202,10 @@ const TelehealthSession = () => {
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <div className="text-sm font-medium">
-                            {new Date(appointment.appointment_date).toLocaleDateString()}
+                            {formatDate(appointment.appointment_date, tz)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                            {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
@@ -241,10 +244,10 @@ const TelehealthSession = () => {
                     <div className="flex items-center gap-4">
                       <div className="text-center">
                         <div className="text-sm font-medium">
-                          {new Date(appointment.appointment_date).toLocaleDateString()}
+                          {formatDate(appointment.appointment_date, tz)}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                          {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                             hour: '2-digit',
                             minute: '2-digit'
                           })}

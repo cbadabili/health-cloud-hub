@@ -6,22 +6,19 @@ import { useAuth } from "@/hooks/useAuth";
 import DeviceCheck from "@/components/telehealth/DeviceCheck";
 import VideoComingSoon from "@/components/telehealth/VideoComingSoon";
 import { companyConfig } from "@/content/companyConfig";
-import { doctorName, toSlotTime } from "@/lib/booking";
+import { doctorName, myPortalPatientIds, toSlotTime } from "@/lib/booking";
+import type { Database } from "@/integrations/supabase/types";
+import { formatDate } from "@/lib/locale";
 
 interface TelehealthAppointment {
   id: string;
-  doctor_id: string;
+  provider_id: string;
   appointment_date: string;
   status: string;
   reason_for_visit: string | null;
 }
 
-interface DoctorInfo {
-  doctor_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  specialization: string | null;
-}
+type DoctorInfo = Database["public"]["Functions"]["list_bookable_providers"]["Returns"][number];
 
 const STATUS_LABELS: Record<string, string> = {
   scheduled: "Booked",
@@ -44,15 +41,16 @@ const TelehealthAccess = () => {
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    const patientIds = await myPortalPatientIds(user.id);
     const [{ data }, { data: doctorData }] = await Promise.all([
       supabase
         .from("appointments")
-        .select("id, doctor_id, appointment_date, status, reason_for_visit")
-        .eq("patient_id", user.id)
+        .select("id, provider_id, appointment_date, status, reason_for_visit")
+        .in("patient_id", patientIds)
         .eq("appointment_type", "telehealth")
         .order("appointment_date", { ascending: true }),
       // Names of verified doctors (fails quietly if booking isn't set up yet).
-      supabase.rpc("list_bookable_doctors"),
+      supabase.rpc("list_bookable_providers"),
     ]);
     setAppointments(data ?? []);
     setDoctors(doctorData ?? []);
@@ -63,14 +61,14 @@ const TelehealthAccess = () => {
     load();
   }, [load]);
 
-  const doctorsById = useMemo(() => new Map(doctors.map((d) => [d.doctor_id, d])), [doctors]);
+  const doctorsById = useMemo(() => new Map(doctors.map((d) => [d.provider_id, d])), [doctors]);
   const now = new Date();
   const upcoming = appointments.filter((a) => a.status === "scheduled" && new Date(a.appointment_date) >= now);
   const past = appointments.filter((a) => !(a.status === "scheduled" && new Date(a.appointment_date) >= now)).reverse();
 
   const renderAppointment = (appointment: TelehealthAppointment, isUpcoming: boolean) => {
-    const doctor = doctorsById.get(appointment.doctor_id);
-    const when = new Date(appointment.appointment_date);
+    const doctor = doctorsById.get(appointment.provider_id);
+    const tz = doctor?.timezone ?? "Africa/Gaborone";
     return (
       <li key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border border-border rounded-lg">
         <div className="flex items-center gap-4 min-w-0">
@@ -78,16 +76,16 @@ const TelehealthAccess = () => {
             <Video className="h-5 w-5 text-medical-blue" />
           </div>
           <div className="min-w-0">
-            <h4 className="font-semibold">{doctorName(doctor?.first_name, doctor?.last_name)}</h4>
-            {doctor?.specialization && <p className="text-sm text-muted-foreground">{doctor.specialization}</p>}
+            <h4 className="font-semibold">{doctorName(doctor?.display_name)}</h4>
+            {doctor && <p className="text-sm text-muted-foreground">{[doctor.practice_name, doctor.specialization].filter(Boolean).join(" · ")}</p>}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                {when.toLocaleDateString()}
+                {formatDate(appointment.appointment_date, tz)}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {toSlotTime(appointment.appointment_date)}
+                {toSlotTime(appointment.appointment_date, tz)}
               </span>
             </div>
             {appointment.reason_for_visit && (

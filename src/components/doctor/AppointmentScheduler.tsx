@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, Video, Search, Plus, Edit, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
-import { useAuth } from "@/hooks/useAuth";
+import { usePractice } from "@/hooks/usePractice";
+import { formatDate } from "@/lib/locale";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,24 +28,26 @@ interface Appointment {
 }
 
 const AppointmentScheduler = () => {
-  const { user } = useAuth();
+  const { current } = usePractice();
+  const providerId = current?.provider_id ?? null;
+  const tz = current?.timezone ?? "Africa/Gaborone";
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (user) {
+    if (providerId) {
       fetchAppointments();
     }
-  }, [user]);
+  }, [providerId]);
 
   const fetchAppointments = async () => {
     try {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .eq('doctor_id', user?.id)
+        .eq('provider_id', providerId ?? '')
         .order('appointment_date', { ascending: true });
 
       if (error) throw error;
@@ -59,7 +62,7 @@ const AppointmentScheduler = () => {
       
       const appointmentsWithProfiles = data?.map(apt => ({
         ...apt,
-        profiles: profiles.find(p => p.user_id === apt.patient_id)
+        profiles: profiles.find(p => p.id === apt.patient_id)
       })) || [];
       
       setAppointments(appointmentsWithProfiles);
@@ -217,7 +220,7 @@ const AppointmentScheduler = () => {
                     <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
                         <div className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                          {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                          {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
@@ -280,10 +283,10 @@ const AppointmentScheduler = () => {
                       <div className="flex items-center gap-4">
                         <div className="text-center">
                           <div className="text-sm font-medium">
-                            {new Date(appointment.appointment_date).toLocaleDateString()}
+                            {formatDate(appointment.appointment_date, tz)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                            {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
@@ -333,9 +336,9 @@ const AppointmentScheduler = () => {
                 {filteredAppointments.map((appointment) => (
                   <div key={appointment.id} className="grid grid-cols-6 gap-4 p-4 min-w-[52rem] border-t hover:bg-muted/50">
                     <div className="text-sm">
-                      <div>{new Date(appointment.appointment_date).toLocaleDateString()}</div>
+                      <div>{formatDate(appointment.appointment_date, tz)}</div>
                       <div className="text-muted-foreground">
-                        {new Date(appointment.appointment_date).toLocaleTimeString('en-US', {
+                        {new Date(appointment.appointment_date).toLocaleTimeString('en-GB', { timeZone: tz,
                           hour: '2-digit',
                           minute: '2-digit'
                         })}

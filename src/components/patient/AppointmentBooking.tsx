@@ -20,6 +20,8 @@ import { Calendar, Clock, Info, Loader2, MapPin, Stethoscope, User } from "lucid
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Database } from "@/integrations/supabase/types";
+import { formatDate } from "@/lib/locale";
 import {
   TIME_SLOTS,
   bookingErrorMessage,
@@ -27,26 +29,23 @@ import {
   formatFee,
   isBookingNotSetUp,
   localDayRange,
+  myPortalPatientIds,
   slotToDate,
   toSlotTime,
   todayLocal,
 } from "@/lib/booking";
 
-interface BookableDoctor {
-  doctor_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  specialization: string | null;
-  consultation_fee: number | null;
-}
+type BookableDoctor = Database["public"]["Functions"]["list_bookable_providers"]["Returns"][number];
 
 interface UpcomingAppointment {
   id: string;
-  doctor_id: string;
+  provider_id: string;
   appointment_date: string;
   appointment_type: string;
   reason_for_visit: string | null;
 }
+
+const DEFAULT_TZ = "Africa/Gaborone";
 
 const AppointmentBooking = () => {
   const { user } = useAuth();
@@ -69,7 +68,7 @@ const AppointmentBooking = () => {
 
   const loadDoctors = useCallback(async () => {
     setLoadingDoctors(true);
-    const { data, error } = await supabase.rpc("list_bookable_doctors");
+    const { data, error } = await supabase.rpc("list_bookable_providers");
     if (error) {
       if (isBookingNotSetUp(error)) setBookingSetUp(false);
       else toast.error("Could not load doctors. Please try again.");
@@ -83,10 +82,16 @@ const AppointmentBooking = () => {
   const loadAppointments = useCallback(async () => {
     if (!user) return;
     setLoadingAppointments(true);
+    const patientIds = await myPortalPatientIds(user.id);
+    if (patientIds.length === 0) {
+      setAppointments([]);
+      setLoadingAppointments(false);
+      return;
+    }
     const { data, error } = await supabase
       .from("appointments")
-      .select("id, doctor_id, appointment_date, appointment_type, reason_for_visit")
-      .eq("patient_id", user.id)
+      .select("id, provider_id, appointment_date, appointment_type, reason_for_visit")
+      .in("patient_id", patientIds)
       .eq("status", "scheduled")
       .gte("appointment_date", new Date().toISOString())
       .order("appointment_date", { ascending: true });
@@ -95,6 +100,10 @@ const AppointmentBooking = () => {
     setLoadingAppointments(false);
   }, [user]);
 
+  const doctorsById = useMemo(() => new Map(doctors.map((d) => [d.provider_id, d])), [doctors]);
+  const selected = doctorsById.get(selectedDoctor);
+  const selectedTz = selected?.timezone ?? DEFAULT_TZ;
+
   // Times already taken for the chosen doctor and day.
   const loadTakenSlots = useCallback(async () => {
     if (!selectedDoctor || !selectedDate) {
@@ -102,15 +111,16 @@ const AppointmentBooking = () => {
       return;
     }
     setLoadingSlots(true);
-    const { from, to } = localDayRange(selectedDate);
-    const { data, error } = await supabase.rpc("doctor_booked_slots", {
-      _doctor_id: selectedDoctor,
+    const tz = doctorsById.get(selectedDoctor)?.timezone ?? DEFAULT_TZ;
+    const { from, to } = localDayRange(selectedDate, tz);
+    const { data, error } = await supabase.rpc("provider_booked_slots", {
+      _provider_id: selectedDoctor,
       _from: from,
       _to: to,
     });
-    setTakenSlots(error ? new Set() : new Set((data ?? []).map(toSlotTime)));
+    setTakenSlots(error ? new Set() : new Set((data ?? []).map((iso) => toSlotTime(iso, tz))));
     setLoadingSlots(false);
-  }, [selectedDoctor, selectedDate]);
+  }, [selectedDoctor, selectedDate, doctorsById]);
 
   useEffect(() => {
     loadDoctors();
@@ -121,11 +131,9 @@ const AppointmentBooking = () => {
     loadTakenSlots();
   }, [loadTakenSlots]);
 
-  const doctorsById = useMemo(() => new Map(doctors.map((d) => [d.doctor_id, d])), [doctors]);
-
   /** A slot is unavailable if it's booked, or already past (for today). */
   const isSlotUnavailable = (time: string) =>
-    takenSlots.has(time) || (selectedDate !== "" && slotToDate(selectedDate, time) <= new Date());
+    takenSlots.has(time) || (selectedDate !== "" && slotToDate(selectedDate, time, selectedTz) <= new Date());
 
   // Clear a chosen time that has become unavailable.
   useEffect(() => {
@@ -139,10 +147,10 @@ const AppointmentBooking = () => {
       return;
     }
 
-    const startsAt = slotToDate(selectedDate, selectedTime);
+    const startsAt = slotToDate(selectedDate, selectedTime, selectedTz);
     setSubmitting(true);
     const { error } = await supabase.rpc("book_appointment", {
-      _doctor_id: selectedDoctor,
+      _provider_id: selectedDoctor,
       _starts_at: startsAt.toISOString(),
       _reason: reason.trim(),
     });
@@ -154,9 +162,8 @@ const AppointmentBooking = () => {
       return;
     }
 
-    const doctor = doctorsById.get(selectedDoctor);
     toast.success(
-      `Appointment booked with ${doctorName(doctor?.first_name, doctor?.last_name)} on ${startsAt.toLocaleDateString()} at ${selectedTime}.`,
+      `Appointment booked with ${doctorName(selected?.display_name)} at ${selected?.practice_name ?? "the practice"} on ${formatDate(startsAt.toISOString(), selectedTz)} at ${selectedTime}.`,
     );
     setSelectedDate("");
     setSelectedTime("");
@@ -178,8 +185,7 @@ const AppointmentBooking = () => {
   };
 
   const nameFor = (doctorId: string) => {
-    const d = doctorsById.get(doctorId);
-    return doctorName(d?.first_name, d?.last_name);
+    return doctorName(doctorsById.get(doctorId)?.display_name);
   };
 
   return (
@@ -212,15 +218,15 @@ const AppointmentBooking = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {doctors.map((doctor) => {
-                        const fee = formatFee(doctor.consultation_fee);
+                        const fee = formatFee(doctor.consultation_fee, doctor.currency);
                         return (
-                          <SelectItem key={doctor.doctor_id} value={doctor.doctor_id}>
+                          <SelectItem key={doctor.provider_id} value={doctor.provider_id}>
                             <div className="flex items-center gap-2">
                               <Stethoscope className="h-4 w-4" />
                               <div>
-                                <p className="font-medium">{doctorName(doctor.first_name, doctor.last_name)}</p>
+                                <p className="font-medium">{doctorName(doctor.display_name)}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {[doctor.specialization, fee].filter(Boolean).join(" · ") || "General"}
+                                  {[doctor.practice_name, doctor.specialization, fee].filter(Boolean).join(" · ")}
                                 </p>
                               </div>
                             </div>
@@ -238,7 +244,7 @@ const AppointmentBooking = () => {
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    min={todayLocal()}
+                    min={todayLocal(selectedTz)}
                   />
                 </div>
 
@@ -332,9 +338,10 @@ const AppointmentBooking = () => {
           ) : (
             <ul className="space-y-4">
               {appointments.map((appointment) => {
-                const when = new Date(appointment.appointment_date);
-                const doctor = doctorsById.get(appointment.doctor_id);
-                const name = nameFor(appointment.doctor_id);
+                const doctor = doctorsById.get(appointment.provider_id);
+                const tz = doctor?.timezone ?? DEFAULT_TZ;
+                const day = formatDate(appointment.appointment_date, tz);
+                const name = nameFor(appointment.provider_id);
                 return (
                   <li
                     key={appointment.id}
@@ -346,17 +353,19 @@ const AppointmentBooking = () => {
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-semibold">{name}</h4>
-                        {doctor?.specialization && (
-                          <p className="text-sm text-muted-foreground">{doctor.specialization}</p>
+                        {doctor && (
+                          <p className="text-sm text-muted-foreground">
+                            {[doctor.practice_name, doctor.specialization].filter(Boolean).join(" · ")}
+                          </p>
                         )}
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {when.toLocaleDateString()}
+                            {day}
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {toSlotTime(appointment.appointment_date)}
+                            {toSlotTime(appointment.appointment_date, tz)}
                           </span>
                           <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
@@ -385,8 +394,8 @@ const AppointmentBooking = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Your appointment with {name} on {when.toLocaleDateString()} at{" "}
-                              {toSlotTime(appointment.appointment_date)} will be cancelled and the time released.
+                              Your appointment with {name} on {day} at{" "}
+                              {toSlotTime(appointment.appointment_date, tz)} will be cancelled and the time released.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
