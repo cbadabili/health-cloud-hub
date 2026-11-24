@@ -413,7 +413,8 @@ const Auth = () => {
         </Card>
         
         <p className="text-center text-sm text-medical-gray mt-6">
-          By signing up, you agree to our Terms of Service and{' '}
+          By signing up, you agree to our{' '}
+          <Link to="/terms" className="text-medical-blue underline-offset-4 hover:underline">Terms of Service</Link> and{' '}
           <Link to="/privacy" className="text-medical-blue underline-offset-4 hover:underline">Privacy Policy</Link>.
           <br />
           Built with POPIA and DPA data-protection requirements in mind.

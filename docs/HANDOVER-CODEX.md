@@ -130,11 +130,12 @@ soon" tooltip.** Buttons that do nothing when clicked damage trust.
 ### 4. Small fixes
 - `src/components/Header.tsx`: the "Profile" menu item has no action. Add a
   basic profile page or remove the item.
-- `src/components/Footer.tsx`: 10 links still use `href="#"`. Terms of Service
-  needs a real page (also referenced on `/auth`); hide the rest until they
-  exist. Privacy Policy, Cookie Policy and POPIA & DPA now go to `/privacy`.
-  Its facts live in `src/content/privacyPolicyConfig.ts`; don't edit the
-  policy wording without legal sign-off.
+- `src/components/Footer.tsx`: 9 product/support links still use `href="#"`;
+  hide them until the pages exist. Privacy Policy, Cookie Policy, POPIA & DPA
+  and Terms of Service go to `/privacy` and `/terms`. Their business facts live
+  in `src/content/companyConfig.ts`, `privacyPolicyConfig.ts` and
+  `termsConfig.ts`; don't edit the legal wording without legal sign-off. Both
+  pages use the shared layout in `src/components/legal/LegalPage.tsx`.
 - `src/integrations/supabase/client.ts`: render a clear configuration error
   screen instead of throwing at import time.
 - Icon-only buttons in `doctor/`, `patient/` and `admin/` components need an
