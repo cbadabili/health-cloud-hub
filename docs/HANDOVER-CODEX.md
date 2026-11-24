@@ -26,10 +26,11 @@ Supabase AI, log drains) without checking they run self-hosted.
 
 **Founder still has to** (not code; don't block on these, but don't guess them either):
 1. Stand up the Azure environment and apply the migrations (runbook §3–§6),
-   including enabling TOTP MFA in the Auth service and updating the CSP in
-   `vercel.json` to the Azure API domain.
+   including enabling TOTP MFA in the Auth service. Domains are set: app
+   `clinithetics.beedab.com`, API `api.clinithetics.beedab.com` (already
+   allowed in the `vercel.json` CSP).
 2. Decide Pula plan prices (`src/config/pricing.ts`, currently `null`), the
-   domains, the Botswana in-country copy question, the pilot clinics and the Omang format
+   Botswana in-country copy question, the pilot clinics and the Omang format
    (`checkNationalId` in `src/lib/locale.ts` assumes 9 digits and only warns).
 
 **Work order for Codex:** Task A (leftovers), then Task B (Increment 2, front
