@@ -58,6 +58,19 @@ UPDATE public.practices SET require_mfa = false WHERE id = :'pc';
 SELECT tests.login(:'manager_only', 'aal1');
 SELECT tests.is((SELECT count(*)::int FROM public.practices), 1, 'a practice that switches MFA off allows aal1');
 
+-- Practice settings and staff directory ------------------------------------------------------
+SELECT tests.login(:'owner_a', 'aal2');
+UPDATE public.practices SET legal_name = 'GFC (Pty) Ltd' WHERE id = :'pa';
+SELECT tests.is((SELECT legal_name FROM public.practices WHERE id = :'pa'), 'GFC (Pty) Ltd', 'owners can edit practice details');
+SELECT tests.throws(format($f$ UPDATE public.practices SET currency = 'ZAR' WHERE id = %L $f$, :'pa'), 'permission denied', 'currency is fixed after setup');
+SELECT tests.throws(format($f$ UPDATE public.practices SET country = 'ZA' WHERE id = %L $f$, :'pa'), 'permission denied', 'country is fixed after setup');
+SELECT tests.is((SELECT count(*)::int FROM public.practice_staff_directory(:'pa')), 8, 'the staff directory lists every membership');
+SELECT tests.ok((SELECT bool_and(email IS NOT NULL) FROM public.practice_staff_directory(:'pa')), '...with names and emails');
+SELECT tests.login(:'desk_a', 'aal2');
+SELECT tests.is((SELECT count(*)::int FROM public.practice_staff_directory(:'pa')), 0, 'reception cannot list staff');
+SELECT tests.login(:'owner_b', 'aal2');
+SELECT tests.is((SELECT count(*)::int FROM public.practice_staff_directory(:'pa')), 0, 'another practice cannot list staff');
+
 -- Patient registry --------------------------------------------------------------------------
 SELECT tests.login(:'desk_a', 'aal2');
 SELECT (public.register_patient(:'pa', 'Ayanda', 'Dube', '1990-04-01', 'female', 'omang', '123456789', '+26771234567'))->>'patient_id' AS pat_a \gset
@@ -174,6 +187,10 @@ SELECT tests.ok((SELECT bool_and(token_hash <> :'desk_token' AND token_hash <> :
 SELECT tests.login(:'desk_a', 'aal2');
 SELECT tests.throws(format($f$ SELECT public.invite_staff(%L, 'x@x', 'receptionist') $f$, :'pa'), 'NOT_ALLOWED', 'reception cannot invite staff');
 
+SELECT tests.anon();
+SELECT tests.ok((SELECT practice_name = 'Gaborone Family Clinic' AND role = 'receptionist' AND email = 'new.desk@x' AND status = 'open'
+  FROM public.invitation_preview(:'desk_token')), 'an invitation link can be previewed before signing in');
+SELECT tests.is((SELECT count(*)::int FROM public.invitation_preview('made-up-token')), 0, 'a made-up token previews nothing');
 SELECT tests.login(:'intruder');
 SELECT tests.throws(format($f$ SELECT public.accept_invitation(%L) $f$, :'desk_token'), 'INVITATION_EMAIL_MISMATCH', 'an invitation only works for its email');
 SELECT tests.login(:'new_desk');
@@ -201,6 +218,8 @@ SELECT tests.throws(format($f$ SELECT public.accept_invitation(%L) $f$, :'late_t
 SELECT tests.login(:'revoked');
 SELECT tests.throws(format($f$ SELECT public.accept_invitation(%L) $f$, :'revoked_token'), 'INVITATION_NOT_FOUND', 'a revoked invitation is refused');
 SELECT tests.throws($$ SELECT public.accept_invitation('not-a-real-token') $$, 'INVITATION_NOT_FOUND', 'a made-up token is refused');
+SELECT tests.is((SELECT status FROM public.invitation_preview(:'late_token')), 'expired', 'the preview says when an invitation has expired');
+SELECT tests.is((SELECT status FROM public.invitation_preview(:'desk_token')), 'used', '...or has been used');
 
 -- Deactivation ----------------------------------------------------------------------------
 SELECT tests.login(:'manager_a', 'aal2');

@@ -493,6 +493,9 @@ CREATE POLICY "Members read their tenant" ON public.tenants FOR SELECT
 
 DROP POLICY IF EXISTS "Members read their practice" ON public.practices;
 CREATE POLICY "Members read their practice" ON public.practices FOR SELECT USING (public.has_practice_role(id));
+-- Country, currency, timezone and tenant are fixed after setup.
+REVOKE UPDATE ON public.practices FROM PUBLIC, anon, authenticated;
+GRANT UPDATE (name, legal_name, registration_no, require_mfa) ON public.practices TO authenticated;
 DROP POLICY IF EXISTS "Owners and managers update their practice" ON public.practices;
 CREATE POLICY "Owners and managers update their practice" ON public.practices FOR UPDATE
   USING (public.has_practice_role(id, ARRAY['owner', 'manager']::public.practice_role[]));
@@ -618,6 +621,23 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   ORDER BY p.name
 $$;
 
+-- Staff list for owners and managers (profiles are private, so names come from here).
+CREATE OR REPLACE FUNCTION public.practice_staff_directory(_practice_id UUID)
+RETURNS TABLE (membership_id UUID, user_id UUID, role public.practice_role, active BOOLEAN, all_sites BOOLEAN,
+               site_ids UUID[], first_name TEXT, last_name TEXT, email TEXT, provider_id UUID, created_at TIMESTAMPTZ)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT m.id, m.user_id, m.role, m.active, m.all_sites,
+         coalesce((SELECT array_agg(ms.site_id) FROM public.membership_sites ms WHERE ms.membership_id = m.id), '{}'),
+         pf.first_name, pf.last_name, pf.email,
+         (SELECT pr.id FROM public.providers pr WHERE pr.membership_id = m.id),
+         m.created_at
+  FROM public.staff_memberships m
+  LEFT JOIN public.profiles pf ON pf.user_id = m.user_id
+  WHERE m.practice_id = _practice_id
+    AND public.has_practice_role(_practice_id, ARRAY['owner', 'manager']::public.practice_role[])
+  ORDER BY m.active DESC, pf.last_name NULLS LAST, pf.first_name NULLS LAST, m.role
+$$;
+
 CREATE OR REPLACE FUNCTION public.create_practice(_name TEXT, _country public.country_code, _site_name TEXT DEFAULT 'Main site')
 RETURNS UUID LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
@@ -697,6 +717,21 @@ BEGIN
   END IF;
   UPDATE public.staff_invitations SET revoked_at = now() WHERE id = _invitation_id AND accepted_at IS NULL;
 END $$;
+
+-- What an invitation link is for, so the page can explain it before sign-in.
+-- Only someone holding the (secret) token can call this usefully.
+CREATE OR REPLACE FUNCTION public.invitation_preview(_token TEXT)
+RETURNS TABLE (practice_name TEXT, country public.country_code, role public.practice_role, email TEXT, status TEXT)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT p.name, p.country, i.role, i.email,
+         CASE WHEN i.revoked_at IS NOT NULL THEN 'revoked'
+              WHEN i.accepted_at IS NOT NULL THEN 'used'
+              WHEN i.expires_at <= now() THEN 'expired'
+              ELSE 'open' END
+  FROM public.staff_invitations i
+  JOIN public.practices p ON p.id = i.practice_id
+  WHERE i.token_hash = encode(sha256(convert_to(coalesce(_token, ''), 'UTF8')), 'hex')
+$$;
 
 -- The signed-in user's email must match the invitation.
 CREATE OR REPLACE FUNCTION public.accept_invitation(_token TEXT)
@@ -1022,7 +1057,7 @@ DO $$
 DECLARE f TEXT;
 BEGIN
   FOREACH f IN ARRAY ARRAY[
-    'public.my_practices()', 'public.create_practice(text, public.country_code, text)',
+    'public.my_practices()', 'public.practice_staff_directory(uuid)', 'public.create_practice(text, public.country_code, text)',
     'public.invite_staff(uuid, text, public.practice_role, boolean, uuid[])', 'public.revoke_invitation(uuid)',
     'public.accept_invitation(text)', 'public.deactivate_staff(uuid)', 'public.set_staff_sites(uuid, boolean, uuid[])',
     'public.find_patient_duplicates(uuid, text, text, date, public.national_id_type, text, text, uuid)',
@@ -1034,6 +1069,8 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', f);
   END LOOP;
 END $$;
+
+GRANT EXECUTE ON FUNCTION public.invitation_preview(text) TO anon, authenticated;
 
 -- Access-check helpers are used inside RLS policies, so every API role must be able to
 -- evaluate them. They only read and return false for anonymous callers.
