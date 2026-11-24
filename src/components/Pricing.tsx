@@ -1,10 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, Star, ArrowRight } from "lucide-react";
+import { Check, Clock, Star, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
+/**
+ * A plan feature. Mark anything not yet usable in the product as coming soon,
+ * so the pricing never advertises features customers can't use yet.
+ */
+type Feature = string | { text: string; comingSoon: true };
+const soon = (text: string): Feature => ({ text, comingSoon: true });
+
 const Pricing = () => {
-  const plans = [
+  const plans: {
+    name: string;
+    price: string;
+    period: string;
+    description: string;
+    features: Feature[];
+    popular: boolean;
+    cta: string;
+  }[] = [
     {
       name: "Basic",
       price: "R999",
@@ -16,7 +31,7 @@ const Pricing = () => {
         "Digital patient records",
         "Standard billing & invoicing",
         "Email support",
-        "Basic reporting"
+        soon("Basic reporting")
       ],
       popular: false,
       cta: "Start Free Trial"
@@ -28,12 +43,12 @@ const Pricing = () => {
       description: "Most popular for growing practices",
       features: [
         "Up to 2,000 patients",
-        "Advanced scheduling with automation",
+        soon("Advanced scheduling with automation"),
         "Complete EMR/EHR system",
-        "Intelligent billing & PMB claims",
-        "Telehealth consultations",
+        soon("Intelligent billing & PMB claims"),
+        soon("Telehealth consultations"),
         "Digital prescriptions",
-        "Advanced analytics",
+        soon("Advanced analytics"),
         "Priority support"
       ],
       popular: true,
@@ -46,14 +61,14 @@ const Pricing = () => {
       description: "Enterprise solution for large practices",
       features: [
         "Unlimited patients",
-        "Multi-location support",
-        "Advanced telehealth features",
-        "Custom integrations",
-        "White-label options",
+        soon("Multi-location support"),
+        soon("Advanced telehealth features"),
+        soon("Custom integrations"),
+        soon("White-label options"),
         "Dedicated account manager",
         "24/7 phone support",
-        "Custom reporting",
-        "API access"
+        soon("Custom reporting"),
+        soon("API access")
       ],
       popular: false,
       cta: "Get Started"
@@ -102,12 +117,27 @@ const Pricing = () => {
               </div>
 
               <ul className="space-y-4 mb-8">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-medical-green flex-shrink-0 mt-0.5" />
-                    <span className="text-medical-gray">{feature}</span>
-                  </li>
-                ))}
+                {plan.features.map((feature) => {
+                  const text = typeof feature === "string" ? feature : feature.text;
+                  const comingSoon = typeof feature !== "string";
+                  return (
+                    <li key={text} className="flex items-start gap-3">
+                      {comingSoon ? (
+                        <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      ) : (
+                        <Check className="h-5 w-5 text-medical-green flex-shrink-0 mt-0.5" aria-hidden="true" />
+                      )}
+                      <span className={comingSoon ? "text-muted-foreground" : "text-medical-gray"}>
+                        {text}
+                        {comingSoon && (
+                          <span className="ml-2 inline-block whitespace-nowrap rounded-full border border-border bg-muted px-2 py-0.5 align-middle text-xs font-medium text-muted-foreground">
+                            Coming soon
+                          </span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
 
               <Button 
@@ -128,6 +158,9 @@ const Pricing = () => {
         <div className="text-center mt-12">
           <p className="text-medical-gray mb-4">
             All plans include 30-day free trial • No setup fees • Cancel anytime
+          </p>
+          <p className="text-sm text-medical-gray mb-4">
+            Features marked "Coming soon" are in development and not available yet.
           </p>
           <p className="text-sm text-medical-gray">
             Need a custom solution? <a href="mailto:sales@clinithetics.com" className="text-medical-blue hover:underline">Contact our sales team</a>
