@@ -5,20 +5,24 @@
  * "To confirm" marker, and the page shows a draft notice until every value is
  * filled in. Have these reviewed by a lawyer before relying on the policy.
  * See docs/compliance/REGULATORY_READINESS.md for context.
+ *
+ * Company name, registration number, address and contact email are shared
+ * with the Terms of Service: set them in ./companyConfig.ts.
  */
+import { isMissing } from "@/lib/legal";
+import { companyConfig } from "./companyConfig";
+
 export const privacyPolicyConfig = {
   /** Shown as "Last updated". Change whenever the policy text changes. */
   lastUpdated: "23 November 2026",
 
-  /** Registered legal name, e.g. "Clinithetics (Pty) Ltd". */
-  companyLegalName: null as string | null,
-  /** Company registration number (CIPC in South Africa / CIPA in Botswana). */
-  companyRegistrationNumber: null as string | null,
-  /** Full physical address for legal notices. */
-  companyAddress: null as string | null,
+  /** Shared company details (edit in ./companyConfig.ts). */
+  companyLegalName: companyConfig.legalName,
+  companyRegistrationNumber: companyConfig.registrationNumber,
+  companyAddress: companyConfig.address,
 
-  /** Where people send privacy questions and requests. Already listed in the site footer. */
-  privacyEmail: "support@clinithetics.com" as string | null,
+  /** Where people send privacy questions and requests. */
+  privacyEmail: companyConfig.contactEmail,
 
   /** POPIA Information Officer (South Africa): name and email. Must also be registered with the Information Regulator. */
   informationOfficer: null as string | null,
@@ -54,5 +58,5 @@ export const countPrivacyGaps = () => {
     c.botswanaRegulatorContact,
     ...Object.values(c.retention),
   ];
-  return values.filter((v) => v === null || v.trim() === "").length;
+  return values.filter(isMissing).length;
 };
