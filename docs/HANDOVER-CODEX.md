@@ -78,6 +78,12 @@ that doesn't exist (404). When adding a provider (e.g. Daily, Twilio, Jitsi):
   `allow="camera; microphone"`;
 - make the system check call `navigator.mediaDevices.getUserMedia` for real.
 
+### Pricing labels
+`src/components/Pricing.tsx` marks unbuilt plan features with `soon("...")`
+("Coming soon"). When you ship one of them (e.g. telehealth video, PMB claims,
+analytics, API access), change it back to a plain string in the same PR.
+Never advertise a feature that customers can't use yet.
+
 ### 1. Wire up the core doctor actions
 Files in `src/components/doctor/` already read from Supabase, but their
 create/edit buttons have no handlers.
