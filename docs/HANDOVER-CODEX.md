@@ -16,11 +16,20 @@ The product plan is in the PRD (Draft v1.0, 24 Nov 2026). Increment 1
 staff roles, invitations, staff two-step sign-in, patient registry with
 duplicate review and merge, audit log, portal re-linking, Pula/Rand locale.
 
+**Hosting:** we do **not** use Supabase's cloud. We run the open-source
+Supabase stack ourselves on an Azure VM in **South Africa North**, so patient
+data stays in South Africa. See `docs/deploy/AZURE_SELF_HOSTED.md`. For you
+nothing changes in code: `supabase-js`, RLS, `auth.uid()`, Storage and the
+test harness all work the same. Don't add features that only exist on
+Supabase's hosted platform (managed Edge Functions, hosted cron, branching,
+Supabase AI, log drains) without checking they run self-hosted.
+
 **Founder still has to** (not code; don't block on these, but don't guess them either):
-1. Apply `supabase/migrations/20261125090000-tenancy-foundation.sql` in the
-   Supabase SQL editor, then enable **TOTP MFA** in Supabase Auth settings.
+1. Stand up the Azure environment and apply the migrations (runbook §3–§6),
+   including enabling TOTP MFA in the Auth service and updating the CSP in
+   `vercel.json` to the Azure API domain.
 2. Decide Pula plan prices (`src/config/pricing.ts`, currently `null`), the
-   hosting region, the pilot clinics and the Omang format
+   domains, the Botswana in-country copy question, the pilot clinics and the Omang format
    (`checkNationalId` in `src/lib/locale.ts` assumes 9 digits and only warns).
 
 **Work order for Codex:** Task A (leftovers), then Task B (Increment 2, front
@@ -102,12 +111,13 @@ possible duplicates unless `_confirm_new`), `find_patient_duplicates`,
 
 ## Before you start
 
-**Database migrations.** The founder applies migrations by hand in the
-Supabase SQL Editor, in filename order. Increment 1 adds
+**Database migrations.** The founder (or whoever runs the server) applies
+migrations by hand with `psql` on the Azure server, in filename order (runbook
+§5). Increment 1 adds
 `20261125090000-tenancy-foundation.sql`. **It wipes test rows in
 appointments, medical records, prescriptions and invoices** on its first run
 (there is no production data yet). After applying it:
-- enable **TOTP MFA** in Supabase Auth settings;
+- make sure **TOTP MFA** is enabled in the Auth service config (runbook §4);
 - regenerate `src/integrations/supabase/types.ts` (or edit by hand).
 
 The app shows "Practice features aren't switched on yet" when `my_practices`
@@ -262,7 +272,7 @@ time/slot helper (e.g. overlap or slot generation in another time zone).
 | 3 | **Encounters:** vitals, allergies, ICD-10 diagnoses, notes with versions/sign/amend, documents, printable prescription/referral | Decide nurse write rights |
 | 4 | **Billing + cashier:** effective-dated tariffs per country/currency, invoice lines with tariff snapshots, idempotency keys, credit notes, payments, allocations, cashier sessions, daily close | `invoices.currency` defaults from the practice |
 | 5 | **Claims:** manual claim tracking per invoice line, statuses, deadlines, rejections, exports, scheme catalogue per country | |
-| 6 | **Messaging + tasks:** outbox + worker (Edge Function + `pg_cron`), SMS/email per country, reminders, delivery log | Also email staff invitations (today the link is copied by hand) |
+| 6 | **Messaging + tasks:** outbox + worker (a container on the Azure VM, or self-hosted Edge Functions; `pg_cron` in our Postgres), SMS/email per country, reminders, delivery log | Also email staff invitations (today the link is copied by hand) |
 | 7 | **Reports + data:** reports that reconcile to source, import dry-run, cutover reconciliation, portability export | |
 
 Telehealth video still has no provider: keep "Video coming soon".
@@ -272,7 +282,7 @@ Telehealth video still has no provider: keep "Video coming soon".
 ## How to hand back
 
 - One PR per task, branched from `main`.
-- The PR description lists: migrations to apply (in order), any Supabase
+- The PR description lists: migrations to apply (in order), any Auth/server
   settings to change, and founder decisions needed.
 - Never describe the product as "compliant"; say "built with POPIA and the
   Botswana DPA in mind". Update `docs/compliance/REGULATORY_READINESS.md` when
