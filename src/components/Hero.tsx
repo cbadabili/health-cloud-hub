@@ -53,15 +53,15 @@ const Hero = () => {
               <div className="p-3 bg-medical-light-green rounded-xl mb-4">
                 <MapPin className="h-8 w-8 text-medical-green" />
               </div>
-              <h3 className="font-semibold text-medical-dark mb-2">Built for Southern Africa</h3>
-              <p className="text-medical-gray text-sm">Rand pricing, PMB claims, and POPIA & DPA in mind</p>
+              <h3 className="font-semibold text-medical-dark mb-2">Built for Botswana and South Africa</h3>
+              <p className="text-medical-gray text-sm">Pula and Rand, Omang and SA ID, local time zones, POPIA & DPA in mind</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="p-3 bg-medical-light-blue rounded-xl mb-4">
                 <Shield className="h-8 w-8 text-medical-blue" />
               </div>
               <h3 className="font-semibold text-medical-dark mb-2">Secure by Design</h3>
-              <p className="text-medical-gray text-sm">Encrypted connections and role-based access</p>
+              <p className="text-medical-gray text-sm">Two-step sign-in for staff, role-based access and an audit log</p>
             </div>
             <div className="flex flex-col items-center text-center">
               <div className="p-3 bg-medical-light-green rounded-xl mb-4">

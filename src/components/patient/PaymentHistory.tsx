@@ -8,25 +8,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
+import { formatCalendarDate, formatDate, formatMoney, type CurrencyCode } from "@/lib/locale";
+import { doctorName, myPortalPatientIds } from "@/lib/booking";
 
 interface Invoice {
   id: string;
-  doctor_id: string;
+  provider_id: string;
   amount: number;
+  currency: CurrencyCode | null;
   due_date: string | null;
   paid_date: string | null;
   status: string;
   invoice_number: string;
   description: string | null;
   created_at: string;
-  doctor_profiles?: {
-    specialization: string | null;
-  };
-  profiles?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
+  provider?: BookableProvider;
 }
+
+type BookableProvider = Database["public"]["Functions"]["list_bookable_providers"]["Returns"][number];
+
+/** Totals per currency, e.g. "P 450.00 + R 200.00" (a patient may be seen in both countries). */
+const sumByCurrency = (list: Invoice[]) => {
+  const totals = new Map<CurrencyCode, number>();
+  for (const inv of list) {
+    const cur = inv.currency ?? "BWP";
+    totals.set(cur, (totals.get(cur) ?? 0) + Number(inv.amount));
+  }
+  if (totals.size === 0) return formatMoney(0, "BWP");
+  return [...totals].map(([cur, amt]) => formatMoney(amt, cur)).join(" + ");
+};
 
 const PaymentHistory = () => {
   const { user } = useAuth();
@@ -42,34 +53,22 @@ const PaymentHistory = () => {
 
   const fetchInvoices = async () => {
     try {
-      const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('patient_id', user?.id)
-        .order('created_at', { ascending: false });
+      const patientIds = user ? await myPortalPatientIds(user.id) : [];
+      if (patientIds.length === 0) {
+        setInvoices([]);
+        return;
+      }
+      const [{ data, error }, { data: providers }] = await Promise.all([
+        supabase.from('invoices').select('*').in('patient_id', patientIds).order('created_at', { ascending: false }),
+        supabase.rpc('list_bookable_providers'),
+      ]);
 
       if (error) throw error;
-      
-      // Fetch doctor profiles and doctor info separately
-      const doctorIds = [...new Set(data?.map(inv => inv.doctor_id) || [])];
-      let doctorProfiles: { user_id: string; specialization: string | null }[] = [];
-      let profiles: { user_id: string; first_name: string | null; last_name: string | null }[] = [];
-      
-      if (doctorIds.length > 0) {
-        const [docProfilesResponse, profilesResponse] = await Promise.all([
-          supabase.from('doctor_profiles').select('user_id, specialization').in('user_id', doctorIds),
-          supabase.from('profiles').select('user_id, first_name, last_name').in('user_id', doctorIds)
-        ]);
-        
-        doctorProfiles = docProfilesResponse.data || [];
-        profiles = profilesResponse.data || [];
-      }
-      
-      const invoicesWithProfiles = data?.map(inv => ({
+
+      const invoicesWithProfiles = (data ?? []).map(inv => ({
         ...inv,
-        doctor_profiles: doctorProfiles.find(dp => dp.user_id === inv.doctor_id),
-        profiles: profiles.find(p => p.user_id === inv.doctor_id)
-      })) || [];
+        provider: (providers ?? []).find(p => p.provider_id === inv.provider_id),
+      }));
       
       setInvoices(invoicesWithProfiles);
     } catch (error) {
@@ -97,9 +96,9 @@ const PaymentHistory = () => {
   const pendingInvoices = invoices.filter(inv => inv.status === 'pending');
   const overdueInvoices = invoices.filter(inv => inv.status === 'overdue');
 
-  const totalPaid = paidInvoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalOutstanding = pendingInvoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalPaid = sumByCurrency(paidInvoices);
+  const totalOutstanding = sumByCurrency(pendingInvoices);
+  const totalOverdue = sumByCurrency(overdueInvoices);
 
   if (loading) {
     return (
@@ -119,19 +118,19 @@ const PaymentHistory = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">R{totalPaid.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{totalPaid}</div>
             <p className="text-sm text-muted-foreground">Total Paid</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">R{totalOutstanding.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{totalOutstanding}</div>
             <p className="text-sm text-muted-foreground">Outstanding</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">R{totalOverdue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{totalOverdue}</div>
             <p className="text-sm text-muted-foreground">Overdue</p>
           </CardContent>
         </Card>
@@ -153,7 +152,7 @@ const PaymentHistory = () => {
                 <p className="font-medium">Outstanding Payments</p>
                 <p className="text-sm">
                   You have {pendingInvoices.length + overdueInvoices.length} unpaid invoice(s) 
-                  totaling R{(totalOutstanding + totalOverdue).toFixed(2)}
+                  totaling {sumByCurrency([...pendingInvoices, ...overdueInvoices])}
                 </p>
               </div>
             </div>
@@ -191,18 +190,18 @@ const PaymentHistory = () => {
                         </div>
                         <div className="text-sm text-muted-foreground space-y-1">
                           <p>
-                            <strong>Doctor:</strong> Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name}
-                            {invoice.doctor_profiles?.specialization && (
-                              <span> • {invoice.doctor_profiles.specialization}</span>
+                            <strong>Doctor:</strong> {doctorName(invoice.provider?.display_name)}
+                            {invoice.provider?.practice_name && (
+                              <span> • {invoice.provider.practice_name}</span>
                             )}
                           </p>
-                          <p><strong>Amount:</strong> R{invoice.amount.toFixed(2)}</p>
-                          <p><strong>Date:</strong> {new Date(invoice.created_at).toLocaleDateString()}</p>
+                          <p><strong>Amount:</strong> {formatMoney(invoice.amount, invoice.currency ?? "BWP")}</p>
+                          <p><strong>Date:</strong> {formatDate(invoice.created_at, invoice.provider?.timezone ?? "Africa/Gaborone")}</p>
                           {invoice.due_date && (
-                            <p><strong>Due:</strong> {new Date(invoice.due_date).toLocaleDateString()}</p>
+                            <p><strong>Due:</strong> {formatCalendarDate(invoice.due_date.slice(0, 10))}</p>
                           )}
                           {invoice.paid_date && (
-                            <p><strong>Paid:</strong> {new Date(invoice.paid_date).toLocaleDateString()}</p>
+                            <p><strong>Paid:</strong> {formatCalendarDate(invoice.paid_date.slice(0, 10))}</p>
                           )}
                           {invoice.description && (
                             <p><strong>Description:</strong> {invoice.description}</p>
@@ -249,17 +248,17 @@ const PaymentHistory = () => {
                       <div className="space-y-1">
                         <h4 className="font-semibold">Invoice #{invoice.invoice_number}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name} • R{invoice.amount.toFixed(2)}
+                          {doctorName(invoice.provider?.display_name)} • {formatMoney(invoice.amount, invoice.currency ?? "BWP")}
                         </p>
                         {invoice.due_date && (
                           <p className="text-sm text-muted-foreground">
-                            Due: {new Date(invoice.due_date).toLocaleDateString()}
+                            Due: {formatCalendarDate(invoice.due_date.slice(0, 10))}
                           </p>
                         )}
                       </div>
                       <Button size="sm" className="bg-primary">
                         <CreditCard className="h-4 w-4 mr-2" />
-                        Pay R{invoice.amount.toFixed(2)}
+                        Pay {formatMoney(invoice.amount, invoice.currency ?? "BWP")}
                       </Button>
                     </div>
                   </div>
@@ -290,11 +289,11 @@ const PaymentHistory = () => {
                       <div className="space-y-1">
                         <h4 className="font-semibold">Invoice #{invoice.invoice_number}</h4>
                         <p className="text-sm text-muted-foreground">
-                          Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name} • R{invoice.amount.toFixed(2)}
+                          {doctorName(invoice.provider?.display_name)} • {formatMoney(invoice.amount, invoice.currency ?? "BWP")}
                         </p>
                         {invoice.paid_date && (
                           <p className="text-sm text-green-700 dark:text-green-300">
-                            Paid: {new Date(invoice.paid_date).toLocaleDateString()}
+                            Paid: {formatCalendarDate(invoice.paid_date.slice(0, 10))}
                           </p>
                         )}
                       </div>
@@ -334,11 +333,11 @@ const PaymentHistory = () => {
                         <div className="space-y-1">
                           <h4 className="font-semibold text-red-800 dark:text-red-300">Invoice #{invoice.invoice_number}</h4>
                           <p className="text-sm text-red-700 dark:text-red-300">
-                            Dr. {invoice.profiles?.first_name} {invoice.profiles?.last_name} • R{invoice.amount.toFixed(2)}
+                            {doctorName(invoice.provider?.display_name)} • {formatMoney(invoice.amount, invoice.currency ?? "BWP")}
                           </p>
                           {invoice.due_date && (
                             <p className="text-sm text-red-700 dark:text-red-300">
-                              Was due: {new Date(invoice.due_date).toLocaleDateString()}
+                              Was due: {formatCalendarDate(invoice.due_date.slice(0, 10))}
                             </p>
                           )}
                         </div>

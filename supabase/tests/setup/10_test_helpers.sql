@@ -77,3 +77,24 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA tests TO anon, authenticated;
+
+-- Test setup shortcut (superuser only): give a user a membership in a practice
+-- without the invitation flow. Clinicians also get a provider record.
+-- Returns the membership id.
+CREATE OR REPLACE FUNCTION tests.add_staff(_practice UUID, _user UUID, _role public.practice_role,
+                                           _site_ids UUID[] DEFAULT NULL)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE m UUID;
+BEGIN
+  INSERT INTO public.staff_memberships (practice_id, user_id, role, all_sites)
+  VALUES (_practice, _user, _role, _site_ids IS NULL) RETURNING id INTO m;
+  IF _site_ids IS NOT NULL THEN
+    INSERT INTO public.membership_sites (membership_id, site_id, practice_id) SELECT m, s, _practice FROM unnest(_site_ids) s;
+  END IF;
+  IF _role = 'clinician' THEN
+    INSERT INTO public.providers (practice_id, membership_id, user_id, display_name)
+    VALUES (_practice, m, _user, coalesce((SELECT nullif(btrim(concat_ws(' ', first_name, last_name)), '') FROM public.profiles WHERE user_id = _user), 'Clinician'));
+  END IF;
+  RETURN m;
+END $$;
+REVOKE ALL ON FUNCTION tests.add_staff(UUID, UUID, public.practice_role, UUID[]) FROM anon, authenticated;

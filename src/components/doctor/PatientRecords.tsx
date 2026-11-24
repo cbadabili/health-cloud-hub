@@ -8,7 +8,8 @@ import { FileText, Search, Plus, Edit, Eye, Calendar, Pill, User } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { errorMessage } from "@/lib/errors";
-import { useAuth } from "@/hooks/useAuth";
+import { usePractice } from "@/hooks/usePractice";
+import { formatCalendarDate, formatDate } from "@/lib/locale";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,7 +50,9 @@ interface Patient {
 }
 
 const PatientRecords = () => {
-  const { user } = useAuth();
+  const { current } = usePractice();
+  const providerId = current?.provider_id ?? null;
+  const tz = current?.timezone ?? "Africa/Gaborone";
   const { toast } = useToast();
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
   const [myPatients, setMyPatients] = useState<Patient[]>([]);
@@ -57,18 +60,18 @@ const PatientRecords = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (user) {
+    if (providerId) {
       fetchMedicalRecords();
       fetchMyPatients();
     }
-  }, [user]);
+  }, [providerId]);
 
   const fetchMedicalRecords = async () => {
     try {
       const { data, error } = await supabase
         .from('medical_records')
         .select('*')
-        .eq('doctor_id', user?.id)
+        .eq('provider_id', providerId ?? '')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -83,7 +86,7 @@ const PatientRecords = () => {
       
       const recordsWithProfiles = data?.map(record => ({
         ...record,
-        profiles: profiles.find(p => p.user_id === record.patient_id)
+        profiles: profiles.find(p => p.id === record.patient_id)
       })) || [];
       
       setMedicalRecords(recordsWithProfiles);
@@ -102,7 +105,7 @@ const PatientRecords = () => {
       const { data: appointments, error } = await supabase
         .from('appointments')
         .select('patient_id')
-        .eq('doctor_id', user?.id);
+        .eq('provider_id', providerId ?? '');
 
       if (error) throw error;
 
@@ -111,17 +114,11 @@ const PatientRecords = () => {
       if (uniquePatientIds.length > 0) {
         const patientsData = await fetchPatientContacts(uniquePatientIds);
         
-        // Fetch patient profiles separately
-        const { data: patientProfiles } = await supabase
-          .from('patient_profiles')
-          .select('user_id, date_of_birth, blood_type, allergies, medical_history')
-          .in('user_id', uniquePatientIds);
-        
-        const patientsWithProfiles = patientsData?.map(p => ({
-          ...p,
+        const patientsWithProfiles = patientsData.map(p => ({
+          user_id: p.id,
           profiles: p,
-          patient_profiles: patientProfiles?.find(pp => pp.user_id === p.user_id)
-        })) || [];
+          patient_profiles: { date_of_birth: p.date_of_birth, blood_type: null, allergies: null, medical_history: null },
+        }));
         
         setMyPatients(patientsWithProfiles);
       }
@@ -250,7 +247,7 @@ const PatientRecords = () => {
                               {record.profiles?.first_name} {record.profiles?.last_name}
                             </h4>
                             <Badge variant="outline">
-                              {new Date(record.created_at).toLocaleDateString()}
+                              {formatDate(record.created_at, tz)}
                             </Badge>
                           </div>
                           
@@ -329,7 +326,7 @@ const PatientRecords = () => {
                           {patient.patient_profiles?.date_of_birth && (
                             <div>
                               <span className="font-medium">DOB: </span>
-                              {new Date(patient.patient_profiles.date_of_birth).toLocaleDateString()}
+                              {formatCalendarDate(patient.patient_profiles.date_of_birth)}
                             </div>
                           )}
                           {patient.patient_profiles?.blood_type && (

@@ -68,9 +68,9 @@ sources disagree **[verify]**.
 | **Lawful basis for health data** | s 11; s 26 prohibition with s 32 exemption for healthcare providers; 2026 health regulations | Sensitive data is prohibited by default, with listed conditions that allow it **[verify that health data is listed]** | 🟡 | The platform assumes practices process under the healthcare exemption. There is no record of which basis applies per practice, and no patient consent capture. |
 | **Purpose & minimality** | s 10, 13, 15 | Purpose limitation & minimisation | 🟡 | Role-based dashboards limit what each role sees. No documented purposes, and some fields are broader than needed (e.g. free-text medical history). |
 | **Openness / privacy notice** | s 17–18 | Transparency duties | 🟡 | Draft privacy policy at `/privacy` (`src/pages/PrivacyPolicy.tsx`), linked from the footer and sign-up page. Business facts still to fill in are in `src/content/privacyPolicyConfig.ts` and show as "To confirm" until set. Needs legal review. No consent step at patient sign-up yet. |
-| **Access control** | s 19 | Security safeguards | 🟡 | RLS is enabled. **But see the critical issue in §5:** users can grant themselves `super_admin` at sign-up. Doctors now need admin approval after a registration check (§5.2). |
+| **Access control** | s 19 | Security safeguards | 🟡 | Access is per practice and per role (owner, manager, receptionist, nurse, clinician, biller), optionally limited to sites, and enforced by row-level security in the database. Removing a staff role stops access on the next request. Staff must use **two-step sign-in (TOTP)** when the practice requires it (on by default). Clinicians also need an approved registration check (§5.2). Platform admins no longer have blanket access to clinical records. Still missing: session timeouts and a periodic access review. |
 | **Security safeguards (encryption, integrity)** | s 19 | Security safeguards | 🟡 | TLS and HSTS in transit. Encryption at rest is handled by the database host **[confirm on our Supabase plan]**. No field-level encryption for clinical notes. |
-| **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | ❌ | No logging of who viewed, changed or exported a record. |
+| **Audit trail** | s 19 (accepted practice); 2026 health regulations | Accountability | 🟡 | Append-only `audit_events` log: who created, changed or deleted patients, contacts, portal access, staff roles, invitations, appointments, notes, prescriptions and invoices, plus every time a patient record is opened and every merge (with reason). Entries hold ids and changed field names, never record contents, and can't be edited or deleted. Owners and managers can read it in the app. Still missing: exports (none exist yet), failed-access logging, retention period for the log itself. |
 | **Operator / processor agreements** | s 20–21 | Processor contracts | ❌ | No template agreement between Clinithetics and practices. No signed agreements with our own sub-processors (Supabase, Vercel). |
 | **Breach notification** | s 22: Regulator and data subjects "as soon as reasonably possible". Reported through the Information Regulator's eServices portal (mandatory since 1 April 2025). | Notify the IDPC within **72 hours** of becoming aware, unless the breach is unlikely to create a risk; notify affected people without undue delay **[verify]** | ❌ | No incident response plan, owner or contact list. |
 | **Data subject rights (access, correction, deletion)** | s 23–25 | Access, rectification, erasure, objection | 🟡 | Patients can view their records in the portal. No export, correction request or deletion flow. |
@@ -157,8 +157,10 @@ rules (HPCSA telehealth guidance) need covering too.
 Engineering (can be handed to Codex; see `docs/HANDOVER-CODEX.md`):
 1. ~~Fix the `super_admin` sign-up hole (§5.1)~~ done in code; apply the migration to production and audit existing roles.
 2. ~~Add doctor verification (§5.2)~~ done in code; apply the migration and approve existing doctors.
-3. Add an append-only audit log for record views, edits, exports and admin
-   actions.
+3. ~~Add an append-only audit log~~ done for views, edits and admin actions
+   (`audit_events`); add export events when exports are built.
+3a. ~~Staff two-step sign-in~~ done (TOTP, required per practice by default);
+   enable TOTP MFA in Supabase Auth settings in production.
 4. Build patient data rights flows: export, correction request, deletion
    request.
 5. Add a consent and notice step at patient sign-up, linked to a real privacy

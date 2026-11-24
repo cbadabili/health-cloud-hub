@@ -7,14 +7,16 @@ q() { psql -X -q -At -v ON_ERROR_STOP=1 -d "$DB" "$@"; }
 DOC=$(q -c "SELECT tests.create_user('doc@x', '{\"role\":\"doctor\",\"registration_council\":\"HPCSA\",\"registration_number\":\"MP1\"}')")
 P1=$(q -c "SELECT tests.create_user('p1@x', '{\"role\":\"patient\"}')")
 P2=$(q -c "SELECT tests.create_user('p2@x', '{\"role\":\"patient\"}')")
-q -c "UPDATE public.doctor_verifications SET status = 'approved' WHERE doctor_id = '$DOC'"
+q -c "UPDATE public.doctor_verifications SET status = 'approved' WHERE doctor_id = '$DOC'" >/dev/null
+q -c "SELECT tests.login('$DOC', 'aal2'); SELECT public.create_practice('Race Clinic', 'ZA');" >/dev/null
+PROVIDER=$(q -c "SELECT id FROM public.providers WHERE user_id = '$DOC'")
 SLOT=$(q -c "SELECT date_trunc('hour', now()) + interval '3 days 10 hours'")
 
 book() {
   psql -X -q -At -d "$DB" <<SQL 2>&1
 SELECT tests.login('$1');
 BEGIN;
-SELECT CASE WHEN public.book_appointment('$DOC', '$SLOT', 'Race test') IS NOT NULL THEN 'BOOKED' END;
+SELECT CASE WHEN public.book_appointment('$PROVIDER', '$SLOT', 'Race test') IS NOT NULL THEN 'BOOKED' END;
 SELECT pg_sleep(1);
 COMMIT;
 SQL

@@ -21,8 +21,11 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'signin');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  // Where to go after signing in. Only same-site paths are allowed, never another website.
+  const rawNext = searchParams.get('next') ?? '';
+  const nextPath = rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('\\') ? rawNext : '/dashboard';
   const [formData, setFormData] = useState({
-    email: '',
+    email: searchParams.get('email') ?? '',
     password: '',
     firstName: '',
     lastName: '',
@@ -43,9 +46,9 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      navigate(nextPath, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, nextPath]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -109,7 +112,7 @@ const Auth = () => {
         return;
       }
 
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}${nextPath === '/dashboard' ? '/' : nextPath}`;
       
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,

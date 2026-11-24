@@ -1,39 +1,43 @@
+import { supabase } from "@/integrations/supabase/client";
+import { formatMoney, formatTime, todayIn, zonedTimeToDate, type CurrencyCode } from "@/lib/locale";
+
 /** Bookable start times (local time), 30-minute slots. */
 export const TIME_SLOTS = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
   "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
 ];
 
-/** "2026-11-26" + "09:30" in the user's local time zone -> Date. */
-export const slotToDate = (date: string, time: string) => new Date(`${date}T${time}:00`);
+/** "2026-11-26" + "09:30" in the practice's time zone -> Date. */
+export const slotToDate = (date: string, time: string, timeZone: string) => zonedTimeToDate(date, time, timeZone);
 
-/** Local "HH:MM" for a timestamp, matching the TIME_SLOTS format. */
-export const toSlotTime = (iso: string) => {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
+/** "HH:MM" in the practice's time zone, matching the TIME_SLOTS format. */
+export const toSlotTime = (iso: string, timeZone: string) => formatTime(iso, timeZone);
 
-/** Start and end (exclusive) of a local calendar day, for querying booked slots. */
-export const localDayRange = (date: string) => {
-  const from = new Date(`${date}T00:00:00`);
-  const to = new Date(from);
-  to.setDate(to.getDate() + 1);
+/** Start and end (exclusive) of a practice-local calendar day, for querying booked slots. */
+export const localDayRange = (date: string, timeZone: string) => {
+  const from = zonedTimeToDate(date, "00:00", timeZone);
+  const to = new Date(from.getTime() + 24 * 60 * 60 * 1000);
   return { from: from.toISOString(), to: to.toISOString() };
 };
 
-/** Today's date as YYYY-MM-DD in local time (for the date picker's minimum). */
-export const todayLocal = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+/** Today's date as YYYY-MM-DD in the given time zone (for the date picker's minimum). */
+export const todayLocal = (timeZone: string) => todayIn(timeZone);
 
-export const doctorName = (first: string | null | undefined, last: string | null | undefined) => {
-  const name = [first, last].filter(Boolean).join(" ");
-  return name ? `Dr. ${name}` : "Your doctor";
-};
+export const doctorName = (displayName: string | null | undefined) =>
+  displayName ? (/^dr\.?\s/i.test(displayName) ? displayName : `Dr. ${displayName}`) : "Your doctor";
 
-export const formatFee = (fee: number | null | undefined) =>
-  fee === null || fee === undefined ? null : `R${Math.round(Number(fee)).toLocaleString("en-ZA")}`;
+export const formatFee = (fee: number | null | undefined, currency: CurrencyCode) =>
+  fee === null || fee === undefined ? null : formatMoney(Number(fee), currency);
+
+/** Patient records this portal user is linked to (one per practice they've booked with). */
+export const myPortalPatientIds = async (userId: string) => {
+  const { data, error } = await supabase.from("patient_portal_links").select("patient_id").eq("user_id", userId);
+  if (error) {
+    console.error("Could not load your patient records:", error.message);
+    return [];
+  }
+  return (data ?? []).map((l) => l.patient_id);
+};
 
 /**
  * True when the booking functions don't exist yet, i.e. the

@@ -19,11 +19,14 @@ export type Database = {
           appointment_date: string
           appointment_type: string
           created_at: string
-          doctor_id: string
           id: string
           notes: string | null
           patient_id: string
+          practice_id: string
+          provider_id: string
           reason_for_visit: string | null
+          room_id: string | null
+          site_id: string
           status: string
           updated_at: string
         }
@@ -31,11 +34,14 @@ export type Database = {
           appointment_date: string
           appointment_type: string
           created_at?: string
-          doctor_id: string
           id?: string
           notes?: string | null
           patient_id: string
+          practice_id: string
+          provider_id: string
           reason_for_visit?: string | null
+          room_id?: string | null
+          site_id: string
           status?: string
           updated_at?: string
         }
@@ -43,13 +49,55 @@ export type Database = {
           appointment_date?: string
           appointment_type?: string
           created_at?: string
-          doctor_id?: string
           id?: string
           notes?: string | null
           patient_id?: string
+          practice_id?: string
+          provider_id?: string
           reason_for_visit?: string | null
+          room_id?: string | null
+          site_id?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_events: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          id: number
+          metadata: Json
+          occurred_at: string
+          outcome: string
+          practice_id: string | null
+          target_id: string | null
+          target_table: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          id?: number
+          metadata?: Json
+          occurred_at?: string
+          outcome?: string
+          practice_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          id?: number
+          metadata?: Json
+          occurred_at?: string
+          outcome?: string
+          practice_id?: string | null
+          target_id?: string | null
+          target_table?: string | null
+          tenant_id?: string | null
         }
         Relationships: []
       }
@@ -142,13 +190,16 @@ export type Database = {
           amount: number
           appointment_id: string | null
           created_at: string
+          currency: Database["public"]["Enums"]["currency_code"] | null
           description: string | null
-          doctor_id: string
           due_date: string | null
           id: string
           invoice_number: string
           paid_date: string | null
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id: string | null
           status: string
           updated_at: string
         }
@@ -156,13 +207,16 @@ export type Database = {
           amount: number
           appointment_id?: string | null
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"] | null
           description?: string | null
-          doctor_id: string
           due_date?: string | null
           id?: string
           invoice_number: string
           paid_date?: string | null
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -170,25 +224,20 @@ export type Database = {
           amount?: number
           appointment_id?: string | null
           created_at?: string
+          currency?: Database["public"]["Enums"]["currency_code"] | null
           description?: string | null
-          doctor_id?: string
           due_date?: string | null
           id?: string
           invoice_number?: string
           paid_date?: string | null
           patient_id?: string
+          practice_id?: string
+          provider_id?: string
+          site_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       medical_records: {
         Row: {
@@ -196,9 +245,11 @@ export type Database = {
           consultation_notes: string | null
           created_at: string
           diagnosis: string | null
-          doctor_id: string
           id: string
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id: string | null
           treatment_plan: string | null
           updated_at: string
           vital_signs: Json | null
@@ -208,9 +259,11 @@ export type Database = {
           consultation_notes?: string | null
           created_at?: string
           diagnosis?: string | null
-          doctor_id: string
           id?: string
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id?: string | null
           treatment_plan?: string | null
           updated_at?: string
           vital_signs?: Json | null
@@ -220,22 +273,112 @@ export type Database = {
           consultation_notes?: string | null
           created_at?: string
           diagnosis?: string | null
-          doctor_id?: string
           id?: string
           patient_id?: string
+          practice_id?: string
+          provider_id?: string
+          site_id?: string | null
           treatment_plan?: string | null
           updated_at?: string
           vital_signs?: Json | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "medical_records_appointment_id_fkey"
-            columns: ["appointment_id"]
-            isOneToOne: false
-            referencedRelation: "appointments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      membership_sites: {
+        Row: {
+          membership_id: string
+          practice_id: string
+          site_id: string
+        }
+        Insert: {
+          membership_id: string
+          practice_id: string
+          site_id: string
+        }
+        Update: {
+          membership_id?: string
+          practice_id?: string
+          site_id?: string
+        }
+        Relationships: []
+      }
+      patient_contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_authorized_rep: boolean
+          is_responsible_party: boolean
+          name: string
+          patient_id: string
+          phone_e164: string | null
+          practice_id: string
+          relationship: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_authorized_rep?: boolean
+          is_responsible_party?: boolean
+          name: string
+          patient_id: string
+          phone_e164?: string | null
+          practice_id: string
+          relationship: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_authorized_rep?: boolean
+          is_responsible_party?: boolean
+          name?: string
+          patient_id?: string
+          phone_e164?: string | null
+          practice_id?: string
+          relationship?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      patient_portal_links: {
+        Row: {
+          created_at: string
+          id: string
+          patient_id: string
+          practice_id: string
+          status: Database["public"]["Enums"]["portal_link_status"]
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          patient_id: string
+          practice_id: string
+          status?: Database["public"]["Enums"]["portal_link_status"]
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          patient_id?: string
+          practice_id?: string
+          status?: Database["public"]["Enums"]["portal_link_status"]
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: []
       }
       patient_profiles: {
         Row: {
@@ -288,10 +431,117 @@ export type Database = {
         }
         Relationships: []
       }
+      patients: {
+        Row: {
+          address: string | null
+          created_at: string
+          created_by: string | null
+          date_of_birth: string | null
+          email: string | null
+          first_name: string
+          id: string
+          id_number: string | null
+          id_type: Database["public"]["Enums"]["national_id_type"]
+          last_name: string
+          merged_into: string | null
+          phone_e164: string | null
+          practice_id: string
+          preferred_language: string
+          sex: string | null
+          source: Database["public"]["Enums"]["patient_source"]
+          status: Database["public"]["Enums"]["patient_status"]
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          id_number?: string | null
+          id_type?: Database["public"]["Enums"]["national_id_type"]
+          last_name: string
+          merged_into?: string | null
+          phone_e164?: string | null
+          practice_id: string
+          preferred_language?: string
+          sex?: string | null
+          source?: Database["public"]["Enums"]["patient_source"]
+          status?: Database["public"]["Enums"]["patient_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          id_number?: string | null
+          id_type?: Database["public"]["Enums"]["national_id_type"]
+          last_name?: string
+          merged_into?: string | null
+          phone_e164?: string | null
+          practice_id?: string
+          preferred_language?: string
+          sex?: string | null
+          source?: Database["public"]["Enums"]["patient_source"]
+          status?: Database["public"]["Enums"]["patient_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      practices: {
+        Row: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at: string
+          created_by: string | null
+          currency: Database["public"]["Enums"]["currency_code"]
+          id: string
+          legal_name: string | null
+          name: string
+          registration_no: string | null
+          require_mfa: boolean
+          tenant_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          created_by?: string | null
+          currency: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          legal_name?: string | null
+          name: string
+          registration_no?: string | null
+          require_mfa?: boolean
+          tenant_id: string
+          timezone: string
+          updated_at?: string
+        }
+        Update: {
+          country?: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          created_by?: string | null
+          currency?: Database["public"]["Enums"]["currency_code"]
+          id?: string
+          legal_name?: string | null
+          name?: string
+          registration_no?: string | null
+          require_mfa?: boolean
+          tenant_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       prescriptions: {
         Row: {
           created_at: string
-          doctor_id: string
           dosage: string
           duration: string
           frequency: string
@@ -300,12 +550,14 @@ export type Database = {
           medical_record_id: string | null
           medication_name: string
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id: string | null
           status: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          doctor_id: string
           dosage: string
           duration: string
           frequency: string
@@ -314,12 +566,14 @@ export type Database = {
           medical_record_id?: string | null
           medication_name: string
           patient_id: string
+          practice_id: string
+          provider_id: string
+          site_id?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          doctor_id?: string
           dosage?: string
           duration?: string
           frequency?: string
@@ -328,18 +582,13 @@ export type Database = {
           medical_record_id?: string | null
           medication_name?: string
           patient_id?: string
+          practice_id?: string
+          provider_id?: string
+          site_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "prescriptions_medical_record_id_fkey"
-            columns: ["medical_record_id"]
-            isOneToOne: false
-            referencedRelation: "medical_records"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -377,6 +626,225 @@ export type Database = {
           profile_photo_url?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      providers: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string
+          id: string
+          membership_id: string
+          practice_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_name: string
+          id?: string
+          membership_id: string
+          practice_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          id?: string
+          membership_id?: string
+          practice_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rooms: {
+        Row: {
+          active: boolean
+          created_at: string
+          exclusive: boolean
+          id: string
+          name: string
+          practice_id: string
+          site_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          exclusive?: boolean
+          id?: string
+          name: string
+          practice_id: string
+          site_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          exclusive?: boolean
+          id?: string
+          name?: string
+          practice_id?: string
+          site_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sites: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          phone_e164: string | null
+          practice_id: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone_e164?: string | null
+          practice_id: string
+          timezone: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone_e164?: string | null
+          practice_id?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          all_sites: boolean
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          practice_id: string
+          revoked_at: string | null
+          role: Database["public"]["Enums"]["practice_role"]
+          site_ids: string[]
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          all_sites?: boolean
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          practice_id: string
+          revoked_at?: string | null
+          role: Database["public"]["Enums"]["practice_role"]
+          site_ids?: string[]
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          all_sites?: boolean
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          practice_id?: string
+          revoked_at?: string | null
+          role?: Database["public"]["Enums"]["practice_role"]
+          site_ids?: string[]
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_memberships: {
+        Row: {
+          active: boolean
+          all_sites: boolean
+          created_at: string
+          created_by: string | null
+          deactivated_at: string | null
+          deactivated_by: string | null
+          id: string
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          all_sites?: boolean
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          id?: string
+          practice_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          all_sites?: boolean
+          created_at?: string
+          created_by?: string | null
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          id?: string
+          practice_id?: string
+          role?: Database["public"]["Enums"]["practice_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          country: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          country?: Database["public"]["Enums"]["country_code"]
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -419,20 +887,168 @@ export type Database = {
         }
         Returns: boolean
       }
-      list_bookable_doctors: {
+      my_practices: {
         Args: Record<PropertyKey, never>
         Returns: {
-          doctor_id: string
+          practice_id: string
+          name: string
+          country: Database["public"]["Enums"]["country_code"]
+          currency: Database["public"]["Enums"]["currency_code"]
+          timezone: string
+          require_mfa: boolean
+          roles: Database["public"]["Enums"]["practice_role"][]
+          all_sites: boolean
+          provider_id: string | null
+        }[]
+      }
+      practice_staff_directory: {
+        Args: {
+          _practice_id: string
+        }
+        Returns: {
+          membership_id: string
+          user_id: string
+          role: Database["public"]["Enums"]["practice_role"]
+          active: boolean
+          all_sites: boolean
+          site_ids: string[]
           first_name: string | null
           last_name: string | null
+          email: string | null
+          provider_id: string | null
+          created_at: string
+        }[]
+      }
+      create_practice: {
+        Args: {
+          _name: string
+          _country: Database["public"]["Enums"]["country_code"]
+          _site_name?: string
+        }
+        Returns: string
+      }
+      invite_staff: {
+        Args: {
+          _practice_id: string
+          _email: string
+          _role: Database["public"]["Enums"]["practice_role"]
+          _all_sites?: boolean
+          _site_ids?: string[]
+        }
+        Returns: string
+      }
+      revoke_invitation: {
+        Args: {
+          _invitation_id: string
+        }
+        Returns: undefined
+      }
+      accept_invitation: {
+        Args: {
+          _token: string
+        }
+        Returns: string
+      }
+      invitation_preview: {
+        Args: {
+          _token: string
+        }
+        Returns: {
+          practice_name: string
+          country: Database["public"]["Enums"]["country_code"]
+          role: Database["public"]["Enums"]["practice_role"]
+          email: string
+          status: string
+        }[]
+      }
+      deactivate_staff: {
+        Args: {
+          _membership_id: string
+        }
+        Returns: undefined
+      }
+      set_staff_sites: {
+        Args: {
+          _membership_id: string
+          _all_sites: boolean
+          _site_ids?: string[]
+        }
+        Returns: undefined
+      }
+      find_patient_duplicates: {
+        Args: {
+          _practice_id: string
+          _first_name: string
+          _last_name: string
+          _date_of_birth: string | null
+          _id_type: Database["public"]["Enums"]["national_id_type"]
+          _id_number: string | null
+          _phone_e164: string | null
+          _exclude?: string
+        }
+        Returns: {
+          patient_id: string
+          first_name: string
+          last_name: string
+          date_of_birth: string | null
+          phone_e164: string | null
+          reason: string
+        }[]
+      }
+      register_patient: {
+        Args: {
+          _practice_id: string
+          _first_name: string
+          _last_name: string
+          _date_of_birth?: string | null
+          _sex?: string | null
+          _id_type?: Database["public"]["Enums"]["national_id_type"]
+          _id_number?: string | null
+          _phone_e164?: string | null
+          _email?: string | null
+          _address?: string | null
+          _confirm_new?: boolean
+        }
+        Returns: Json
+      }
+      merge_patients: {
+        Args: {
+          _keep_id: string
+          _merge_id: string
+          _reason: string
+        }
+        Returns: undefined
+      }
+      verify_portal_link: {
+        Args: {
+          _link_id: string
+        }
+        Returns: undefined
+      }
+      log_patient_view: {
+        Args: {
+          _patient_id: string
+        }
+        Returns: undefined
+      }
+      list_bookable_providers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          provider_id: string
+          practice_id: string
+          practice_name: string
+          country: Database["public"]["Enums"]["country_code"]
+          currency: Database["public"]["Enums"]["currency_code"]
+          timezone: string
+          display_name: string
           specialization: string | null
           consultation_fee: number | null
           telehealth_enabled: boolean | null
         }[]
       }
-      doctor_booked_slots: {
+      provider_booked_slots: {
         Args: {
-          _doctor_id: string
+          _provider_id: string
           _from: string
           _to: string
         }
@@ -440,22 +1056,11 @@ export type Database = {
       }
       book_appointment: {
         Args: {
-          _doctor_id: string
+          _provider_id: string
           _starts_at: string
           _reason: string
         }
         Returns: string
-      }
-      doctor_patient_profiles: {
-        Args: {
-          _patient_ids: string[]
-        }
-        Returns: {
-          user_id: string
-          first_name: string | null
-          last_name: string | null
-          email: string
-        }[]
       }
       cancel_my_appointment: {
         Args: {
@@ -466,6 +1071,13 @@ export type Database = {
     }
     Enums: {
       app_role: "super_admin" | "doctor" | "patient"
+      country_code: "BW" | "ZA"
+      currency_code: "BWP" | "ZAR"
+      national_id_type: "omang" | "sa_id" | "passport" | "other" | "none"
+      patient_source: "staff" | "portal" | "import"
+      patient_status: "active" | "merged"
+      portal_link_status: "pending" | "verified"
+      practice_role: "owner" | "manager" | "receptionist" | "nurse" | "clinician" | "biller"
       registration_council: "HPCSA" | "BHPC"
       verification_status: "not_submitted" | "pending" | "approved" | "rejected"
     }
@@ -596,6 +1208,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["super_admin", "doctor", "patient"],
+      country_code: ["BW", "ZA"],
+      currency_code: ["BWP", "ZAR"],
+      national_id_type: ["omang", "sa_id", "passport", "other", "none"],
+      patient_source: ["staff", "portal", "import"],
+      patient_status: ["active", "merged"],
+      portal_link_status: ["pending", "verified"],
+      practice_role: ["owner", "manager", "receptionist", "nurse", "clinician", "biller"],
       registration_council: ["HPCSA", "BHPC"],
       verification_status: ["not_submitted", "pending", "approved", "rejected"],
     },

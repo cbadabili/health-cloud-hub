@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Clock, Star, ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { DEFAULT_PRICING_COUNTRY, PLAN_PRICES, type PlanName } from "@/config/pricing";
+import { COUNTRIES, formatMoney, type CountryCode } from "@/lib/locale";
 
 /**
  * A plan feature. Mark anything not yet usable in the product as coming soon,
@@ -11,9 +14,15 @@ type Feature = string | { text: string; comingSoon: true };
 const soon = (text: string): Feature => ({ text, comingSoon: true });
 
 const Pricing = () => {
+  const [country, setCountry] = useState<CountryCode>(DEFAULT_PRICING_COUNTRY);
+  const currency = COUNTRIES[country].currency;
+  const priceFor = (plan: PlanName) => {
+    const amount = PLAN_PRICES[plan][currency];
+    return amount === null ? null : formatMoney(amount, currency, { whole: true });
+  };
+
   const plans: {
-    name: string;
-    price: string;
+    name: PlanName;
     period: string;
     description: string;
     features: Feature[];
@@ -22,7 +31,6 @@ const Pricing = () => {
   }[] = [
     {
       name: "Basic",
-      price: "R999",
       period: "/month",
       description: "Perfect for small practices getting started",
       features: [
@@ -38,7 +46,6 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      price: "R2,499",
       period: "/month",
       description: "Most popular for growing practices",
       features: [
@@ -56,12 +63,11 @@ const Pricing = () => {
     },
     {
       name: "Premium",
-      price: "R4,999",
       period: "/month",
       description: "Enterprise solution for large practices",
       features: [
         "Unlimited patients",
-        soon("Multi-location support"),
+        "Multiple sites with per-site staff access",
         soon("Advanced telehealth features"),
         soon("Custom integrations"),
         soon("White-label options"),
@@ -86,6 +92,21 @@ const Pricing = () => {
             Choose the plan that fits your practice size. All plans include our core EMR features 
             and 30-day free trial.
           </p>
+          <div role="group" aria-label="Show prices for" className="mt-8 inline-flex rounded-full border border-border bg-background p-1">
+            {(Object.keys(COUNTRIES) as CountryCode[]).map((code) => (
+              <button
+                key={code}
+                type="button"
+                aria-pressed={country === code}
+                onClick={() => setCountry(code)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  country === code ? "bg-primary text-primary-foreground" : "text-medical-gray hover:text-medical-dark"
+                }`}
+              >
+                {COUNTRIES[code].name} ({COUNTRIES[code].currency})
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -111,8 +132,14 @@ const Pricing = () => {
                 <h3 className="text-2xl font-bold text-medical-dark mb-2">{plan.name}</h3>
                 <p className="text-medical-gray mb-6">{plan.description}</p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl lg:text-5xl font-bold text-medical-dark">{plan.price}</span>
-                  <span className="text-medical-gray">{plan.period}</span>
+                  {priceFor(plan.name) ? (
+                    <>
+                      <span className="text-4xl lg:text-5xl font-bold text-medical-dark">{priceFor(plan.name)}</span>
+                      <span className="text-medical-gray">{plan.period}</span>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-bold text-medical-dark">Contact us</span>
+                  )}
                 </div>
               </div>
 
