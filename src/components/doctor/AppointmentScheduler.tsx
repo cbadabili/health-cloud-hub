@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, User, Video, Search, Plus, Edit, CheckCircle, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { errorMessage } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchPatientContacts, type PatientContact } from "@/lib/doctorPatients";
 import { useToast } from "@/hooks/use-toast";
@@ -62,11 +63,11 @@ const AppointmentScheduler = () => {
       })) || [];
       
       setAppointments(appointmentsWithProfiles);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error fetching appointments",
-        description: error.message
+        description: errorMessage(error)
       });
     } finally {
       setLoading(false);
@@ -90,11 +91,11 @@ const AppointmentScheduler = () => {
         title: "Appointment updated",
         description: `Status changed to ${status}`
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error updating appointment",
-        description: error.message
+        description: errorMessage(error)
       });
     }
   };
