@@ -10,6 +10,24 @@ The product plan is in the PRD (Draft v1.0, 24 Nov 2026). Increment 1
 
 ---
 
+## Start here
+
+**Live on `main`:** Increment 1 (PR #16): practices, sites, rooms, per-practice
+staff roles, invitations, staff two-step sign-in, patient registry with
+duplicate review and merge, audit log, portal re-linking, Pula/Rand locale.
+
+**Founder still has to** (not code; don't block on these, but don't guess them either):
+1. Apply `supabase/migrations/20261125090000-tenancy-foundation.sql` in the
+   Supabase SQL editor, then enable **TOTP MFA** in Supabase Auth settings.
+2. Decide Pula plan prices (`src/config/pricing.ts`, currently `null`), the
+   hosting region, the pilot clinics and the Omang format
+   (`checkNationalId` in `src/lib/locale.ts` assumes 9 digits and only warns).
+
+**Work order for Codex:** Task A (leftovers), then Task B (Increment 2, front
+desk). One PR per task. Don't start Increments 3–7.
+
+---
+
 ## The model (Increment 1)
 
 ```
@@ -139,27 +157,130 @@ Postgres 15+ superuser via `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`).
 
 ---
 
-## Next increments (from the PRD)
+## Task A: finish the Increment 1 leftovers
+
+Small, separate fixes. Do these first, in one PR.
+
+| # | Fix | Files | Done when |
+|---|---|---|---|
+| A1 | Patient portal overview | `src/components/dashboards/PatientDashboard.tsx` | Stat cards and upcoming appointments come from `appointments` filtered by `myPortalPatientIds(user.id)` (`src/lib/booking.ts`), with times via `formatDate`/`formatTime(iso, provider timezone)`. The "Health Score" card is gone (no data source; misleading). Empty states say what to do next. |
+| A2 | Patient medical records | `src/components/patient/MedicalRecords.tsx` | The hardcoded records, prescriptions and allergies are replaced with real rows from `medical_records` and `prescriptions` for `myPortalPatientIds`. RLS already limits portal users to verified links. Allergies: show "Ask your practice" until Increment 3 adds an allergies table. No View/Download buttons that do nothing. |
+| A3 | Super-admin screens | `src/components/dashboards/SuperAdminDashboard.tsx`, `src/components/admin/{SubscriptionManagement,PaymentsModule,ClaimsMonitoring,UserManagement}.tsx` | No made-up numbers: real counts where a platform-level query exists (e.g. practices, verifications), otherwise "Coming soon". **Do not** give `super_admin` access to patients or clinical tables again; platform admins see practice-level counts only (add a `SECURITY DEFINER` function returning aggregates if needed, with tests). |
+| A4 | Nurses see clinical notes | `src/pages/practice/StaffWorkspace.tsx`, `src/components/doctor/PatientRecords.tsx`, `PrescriptionManager.tsx` | Nurses get read-only Notes and Prescriptions tabs filtered by `practice_id` (they have no `provider_id`). Create/edit stays with clinicians. RLS already allows nurse reads. |
+| A5 | Small fixes | `src/components/Footer.tsx`, `src/components/Header.tsx`, `src/integrations/supabase/client.ts`, `src/components/{doctor,patient,admin}/` | Footer: remove the 8 `href="#"` links and the placeholder `+27 (0) 11 123 4567`. Header: remove the dead "Profile" menu item. Client: render a clear "app not configured" screen instead of `throw` at import. Every icon-only button has an `aria-label`. |
+
+---
+
+## Task B: Increment 2, front desk (build-ready)
+
+Goal from the PRD (FR-03): reception runs the day from one diary; a visit goes
+booked → checked in → in room → done, or cancelled / no-show.
+
+### B1. Migration `supabase/migrations/20261126090000-front-desk.sql`
+- **Appointment status** as a checked set: `booked`, `checked_in`, `in_room`,
+  `completed`, `cancelled`, `no_show`. Convert existing `scheduled` →
+  `booked` (default becomes `booked`). Update `book_appointment`,
+  `cancel_my_appointment` and every place in `src/` that writes or compares
+  `scheduled`.
+- **New columns on `appointments`:** `ends_at TIMESTAMPTZ NOT NULL`
+  (backfill `appointment_date + 30 min`, check `ends_at > appointment_date`),
+  `checked_in_at`, `in_room_at`, `completed_at`, `cancelled_reason TEXT`,
+  `booked_by UUID`.
+- **`provider_availability`:** `practice_id`, `provider_id`, `site_id`,
+  `weekday 0–6`, `start_time`, `end_time` (practice-local wall-clock times),
+  plus **`availability_exceptions`** (`provider_id`, `date`, optional times,
+  `reason`) for leave and closures. RLS: members read; owner/manager write;
+  a clinician may edit their own. Add both tables to `enforce_same_practice`
+  and `audit_row_change`.
+- **Clash rules (in the database, not the UI):** a provider can't have
+  overlapping active appointments; a room with `exclusive = true` can't
+  either. "Active" means not `cancelled`/`no_show`. Enforce with a
+  `pg_advisory_xact_lock` **per provider and per room** (today's lock in
+  `book_appointment` is per provider + exact start time, which doesn't catch
+  overlapping durations), then an overlap check. Consider an exclusion
+  constraint (`btree_gist`) as a second line.
+- **Functions** (`SECURITY DEFINER`, `search_path = ''`, revoked from
+  anon, audited via `write_audit_event`):
+  - `staff_book_appointment(_patient_id, _provider_id, _site_id, _room_id,
+    _starts_at, _minutes, _type, _reason)`: owner, manager, receptionist,
+    nurse, clinician with site access (`can_access_row`); patient, provider,
+    site and room must be in the same practice; walk-in = `_starts_at` now.
+    Errors: `SLOT_TAKEN`, `ROOM_TAKEN`, `OUTSIDE_AVAILABILITY` (front desk
+    may override with `_force := true`; record that in the audit metadata),
+    `NOT_ALLOWED`.
+  - `reschedule_appointment(_id, _starts_at, _minutes, _room_id)`: same
+    rules; only `booked` appointments.
+  - `set_appointment_status(_id, _status, _reason)`: allowed transitions
+    only: booked→checked_in/cancelled/no_show; checked_in→in_room/cancelled;
+    in_room→completed. Sets the timestamp columns. `cancelled` needs a reason.
+  - `practice_diary(_practice_id, _from, _to, _site_id)`: appointments with
+    patient name, provider and room for the diary, scope-checked.
+- The portal's `book_appointment` must respect availability and the new clash
+  rules.
+- **Tests** `supabase/tests/07_front_desk.test.sql` (use `tests.add_staff`,
+  `tests.login(id, 'aal2')`): each role allowed/denied; other practice;
+  other site; `aal1` with MFA required; deactivated staff; provider clash with
+  overlapping (not equal) times; exclusive vs shared room; every allowed and
+  disallowed transition; cancel without reason; availability and override;
+  anon. Concurrency: `supabase/tests/concurrency/room_race.sh` (two
+  bookings for one exclusive room at overlapping times → exactly one wins).
+  Run all earlier suites too; the 164 existing checks must stay green.
+- Update `src/integrations/supabase/types.ts`.
+
+### B2. UI
+- **Diary tab** (`src/components/practice/Diary.tsx`, front desk and
+  clinicians): day view by provider (columns) with a week toggle; site
+  filter; times in the practice time zone (`zonedTimeToDate`,
+  `formatTime`, `todayIn`). Click an empty slot → book dialog (patient
+  search reusing the `PatientRegistry` query, provider, room, length,
+  reason). Click an appointment → reschedule, cancel (reason), status.
+- **Today tab** (`src/components/practice/TodayQueue.tsx`): today's
+  appointments grouped Waiting to arrive / Checked in / In room / Done, with
+  one-tap buttons for the allowed next status and "Walk-in". Times show as
+  practice-local.
+- **Patient sheet:** "Book appointment" button in `PatientDetailSheet`.
+- **Availability:** owners/managers edit weekly hours and exceptions per
+  provider in a new admin tab; clinicians edit their own.
+- **Doctor screens:** `AppointmentScheduler` status buttons call
+  `set_appointment_status`; labels follow the new statuses.
+- Map every new error code in `practiceErrorMessage` / `bookingErrorMessage`.
+- Phone layout: the diary becomes a single-provider list with a provider
+  picker at 390px.
+
+### B3. What the PR must show
+`scripts/test-db.sh` green (all files), `npm test`, `tsc`, `npm run lint`
+(0 errors), `npm run build`, and screenshots of Diary, Today and the book
+dialog at 390px and desktop, light and dark. Add vitest tests for any new
+time/slot helper (e.g. overlap or slot generation in another time zone).
+
+---
+
+## Later increments (don't start yet)
 
 | # | Scope | Notes |
 |---|---|---|
-| 2 | **Front desk:** diary per provider and room, walk-ins, reschedule/cancel, check-in, no-show, Today/waiting queue, staff booking for any patient | Reuse `book_appointment`'s advisory lock; rooms with `exclusive` can't double-book |
-| 3 | **Encounters:** vitals, allergies, ICD-10 diagnoses, notes with versions/sign/amend, documents, printable prescription/referral | Nurses read clinical notes today; decide their write rights |
+| 3 | **Encounters:** vitals, allergies, ICD-10 diagnoses, notes with versions/sign/amend, documents, printable prescription/referral | Decide nurse write rights |
 | 4 | **Billing + cashier:** effective-dated tariffs per country/currency, invoice lines with tariff snapshots, idempotency keys, credit notes, payments, allocations, cashier sessions, daily close | `invoices.currency` defaults from the practice |
 | 5 | **Claims:** manual claim tracking per invoice line, statuses, deadlines, rejections, exports, scheme catalogue per country | |
-| 6 | **Messaging + tasks:** outbox + worker (Edge Function + `pg_cron`), SMS/email per country, reminders, delivery log | Also send staff invitations by email (today the link is copied by hand) |
+| 6 | **Messaging + tasks:** outbox + worker (Edge Function + `pg_cron`), SMS/email per country, reminders, delivery log | Also email staff invitations (today the link is copied by hand) |
 | 7 | **Reports + data:** reports that reconcile to source, import dry-run, cutover reconciliation, portability export | |
 
-Known gaps left from Increment 1:
-- `SuperAdminDashboard` and its admin modules still show hardcoded numbers;
-  platform admins no longer have blanket access to clinical tables by design.
-- `PatientDashboard` overview and `patient/MedicalRecords.tsx` still need
-  re-pointing to portal links (the Appointments, Telehealth and Payments tabs
-  are done).
-- Doctor create/edit buttons in `AppointmentScheduler`, `PatientRecords`,
-  `PrescriptionManager` still do nothing (Increments 2–3).
-- Nurses (no provider record) don't get the clinical tabs yet.
-- Telehealth video has no provider; keep "Video coming soon".
+Telehealth video still has no provider: keep "Video coming soon".
+
+---
+
+## How to hand back
+
+- One PR per task, branched from `main`.
+- The PR description lists: migrations to apply (in order), any Supabase
+  settings to change, and founder decisions needed.
+- Never describe the product as "compliant"; say "built with POPIA and the
+  Botswana DPA in mind". Update `docs/compliance/REGULATORY_READINESS.md` when
+  a row's status really changes.
+- When a feature tagged `soon("…")` in `src/components/Pricing.tsx` ships,
+  make it a plain string in the same PR.
+- If a rule here blocks you, stop and explain in the PR rather than weakening
+  RLS or a helper.
 
 ---
 
