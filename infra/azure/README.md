@@ -122,6 +122,62 @@ UPDATE public.user_roles SET role = 'super_admin'
 WHERE user_id = (SELECT id FROM auth.users WHERE email = 'you@example.com');
 ```
 
+## Letting Codex (or another automated tool) deploy
+
+An automated tool can't sign in as you, so it gets its own **app login** (a
+"service principal"). It's limited to **Owner of the two Clinithetics
+resource groups only**: it can't touch anything else in your subscription,
+and it can't create directory (Entra) objects. Do these once, yourself, in
+Cloud Shell:
+
+1. Switch on the Azure services Clinithetics uses (an app login limited to
+   resource groups can't):
+   ```bash
+   for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.KeyVault Microsoft.RecoveryServices Microsoft.OperationalInsights Microsoft.Insights Microsoft.AlertsManagement Microsoft.Communication; do az provider register --namespace $p; done
+   ```
+   Then create the two resource groups, so the login can be limited to them:
+   ```bash
+   az group create -n rg-clinithetics-staging -l southafricanorth
+   ```
+   ```bash
+   az group create -n rg-clinithetics-prod -l southafricanorth
+   ```
+2. Create the app login, scoped to those groups only:
+   ```bash
+   SUB=$(az account show --query id -o tsv)
+   ```
+   ```bash
+   az ad sp create-for-rbac --name clinithetics-deployer --role Owner --scopes /subscriptions/$SUB/resourceGroups/rg-clinithetics-staging /subscriptions/$SUB/resourceGroups/rg-clinithetics-prod
+   ```
+   It prints `appId`, `password` and `tenant`. **The password is shown only once.**
+   Put it straight into Codex's secret settings; never paste it into a chat,
+   an email or the repository.
+3. Find the login's object ID:
+   ```bash
+   az ad sp show --id <appId> --query id -o tsv
+   ```
+4. In Codex's environment settings:
+   - **Secrets:** `AZURE_CLIENT_ID` (appId), `AZURE_CLIENT_SECRET` (password),
+     `AZURE_TENANT_ID` (tenant).
+   - **Variables:** `AZURE_SUBSCRIPTION_ID` (`$SUB`),
+     `DEPLOYER_OBJECT_ID` (step 3) and `ALERT_EMAIL`.
+   - **Tools:** the Azure CLI.
+   - **Internet access** to `management.azure.com`,
+     `login.microsoftonline.com`, `graph.microsoft.com`, `*.vault.azure.net`
+     and `*.blob.core.windows.net`.
+5. **After Codex's first deploy of each environment**, set up email (this
+   step needs directory rights, so it's yours):
+   ```bash
+   bash infra/azure/ops.sh staging email-setup
+   ```
+   Then ask Codex to run `deploy.sh staging` again so the server picks it up.
+   Do the same for `prod`.
+
+The DNS records and Vercel settings that `deploy.sh` prints are still yours
+to add. When you no longer want Codex to deploy, delete the login:
+`az ad sp delete --id <appId>`. The password also expires after a year;
+`az ad sp credential reset --id <appId>` issues a new one.
+
 ## Updating later
 
 - **After new database migrations are merged:** run

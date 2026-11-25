@@ -29,10 +29,12 @@ esac
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO=$(cd "$HERE/../.." && pwd)
 CONFIG=$HERE/config.env
-[ -f "$CONFIG" ] || { echo "Create $CONFIG first (copy config.example.env)." >&2; exit 1; }
-# shellcheck source=/dev/null
-. "$CONFIG"
-: "${ALERT_EMAIL:?Set ALERT_EMAIL in config.env}"
+# Settings come from config.env, or from environment variables (e.g. in Codex or CI).
+if [ -f "$CONFIG" ]; then
+  # shellcheck source=/dev/null
+  . "$CONFIG"
+fi
+: "${ALERT_EMAIL:?Set ALERT_EMAIL in infra/azure/config.env (copy config.example.env) or as an environment variable}"
 SSH_SOURCE_CIDR=${SSH_SOURCE_CIDR:-}
 DEPLOY_BASTION=${DEPLOY_BASTION:-false}
 
@@ -43,6 +45,25 @@ step() { printf '\n==> %s\n' "$*"; }
 command -v az >/dev/null || { echo "Run this in Azure Cloud Shell, or install the Azure CLI." >&2; exit 1; }
 [ -n "${AZURE_SUBSCRIPTION:-}" ] && az account set --subscription "$AZURE_SUBSCRIPTION"
 az account show --query "{subscription:name, tenant:tenantId}" --output table
+
+PROVIDERS="Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.KeyVault Microsoft.RecoveryServices Microsoft.OperationalInsights Microsoft.Insights Microsoft.AlertsManagement Microsoft.Communication"
+step "Checking the Azure services this needs are switched on for the subscription"
+missing=""
+for p in $PROVIDERS; do
+  state=$(az provider show --namespace "$p" --query registrationState --output tsv 2>/dev/null || echo Unknown)
+  if [ "$state" != Registered ]; then
+    if az provider register --namespace "$p" --output none 2>/dev/null; then
+      echo "Registering $p"
+    else
+      missing="$missing $p"
+    fi
+  fi
+done
+if [ -n "$missing" ]; then
+  echo "WARNING: couldn't switch on:$missing" >&2
+  echo "An app login can't do this. The founder runs, once, in Cloud Shell:" >&2
+  echo "  for p in$missing; do az provider register --namespace \$p; done" >&2
+fi
 
 step "Checking the server size is available in South Africa North"
 VM_SIZE=$([ "$ENV_NAME" = prod ] && echo Standard_D4s_v5 || echo Standard_B2ms)
@@ -64,11 +85,21 @@ az group create --name "$RG" --location "$LOCATION" \
   --tags app=clinithetics env="$ENV_NAME" data-classification=health --output none
 
 step "Deploying Azure resources (takes 5-15 minutes)"
-DEPLOYER=$(az ad signed-in-user show --query id --output tsv)
+# A person (Cloud Shell) or an app login (service principal, e.g. Codex or CI)?
+LOGIN_TYPE=$(az account show --query user.type --output tsv)
+if [ "$LOGIN_TYPE" = servicePrincipal ]; then
+  PRINCIPAL_TYPE=ServicePrincipal
+  DEPLOYER=${DEPLOYER_OBJECT_ID:-$(az ad sp show --id "$(az account show --query user.name --output tsv)" --query id --output tsv 2>/dev/null || true)}
+  [ -n "$DEPLOYER" ] || { echo "Set DEPLOYER_OBJECT_ID (the app login's object ID) in config.env or the environment." >&2; exit 1; }
+else
+  PRINCIPAL_TYPE=User
+  DEPLOYER=$(az ad signed-in-user show --query id --output tsv)
+fi
+echo "Deploying as a ${PRINCIPAL_TYPE} ($DEPLOYER)"
 az deployment group create --resource-group "$RG" --name "clinithetics-$(date -u +%Y%m%d%H%M%S)" \
   --template-file "$HERE/main.bicep" \
   --parameters env="$ENV_NAME" apiHostname="$API_HOSTNAME" alertEmail="$ALERT_EMAIL" \
-    adminSshPublicKey="$(cat "$KEY.pub")" deployerObjectId="$DEPLOYER" \
+    adminSshPublicKey="$(cat "$KEY.pub")" deployerObjectId="$DEPLOYER" deployerPrincipalType="$PRINCIPAL_TYPE" \
     sshSourceCidr="$SSH_SOURCE_CIDR" deployBastion="$DEPLOY_BASTION" vmSize="$VM_SIZE" \
   --query properties.outputs --output json > "/tmp/clinithetics-$ENV_NAME-outputs.json"
 out() { python3 -c "import json,sys; print(json.load(open('/tmp/clinithetics-$ENV_NAME-outputs.json'))['$1']['value'])"; }
@@ -94,8 +125,17 @@ if grep -q NOT_READY /tmp/clinithetics-ci.txt || ! grep -q READY /tmp/clinitheti
 fi
 
 step "Email service (Azure Communication Services)"
+EMAIL_PENDING=no
 if [ -z "$(az keyvault secret show --vault-name "$VAULT" --name smtp-user --query value --output tsv 2>/dev/null || true)" ]; then
-  bash "$HERE/acs-smtp.sh" "$RG" "$ACS" "$VAULT" "$SENDER" "$ENV_NAME"
+  if [ "$PRINCIPAL_TYPE" = ServicePrincipal ]; then
+    # Creating the email login needs directory (Entra) rights an app login shouldn't have.
+    EMAIL_PENDING=yes
+    echo "Email isn't set up yet. The founder runs this once in Azure Cloud Shell:"
+    echo "  bash infra/azure/ops.sh $ENV_NAME email-setup"
+    echo "then deploy.sh runs again to pick it up. Continuing without email for now."
+  else
+    bash "$HERE/acs-smtp.sh" "$RG" "$ACS" "$VAULT" "$SENDER" "$ENV_NAME"
+  fi
 else
   echo "Email credentials already in Key Vault."
 fi
@@ -143,6 +183,15 @@ grep -q SETUP_OK /tmp/clinithetics-setup.txt || {
 ANON_KEY=$(az keyvault secret show --vault-name "$VAULT" --name anon-key --query value --output tsv)
 step "Done. Three things for you to do now:"
 cat <<NEXT
+if [ "$EMAIL_PENDING" = yes ]; then
+  cat <<EMAIL
+4. EMAIL IS NOT SET UP: sign-up confirmations, password resets and invitations
+   won't be delivered. The founder runs once in Azure Cloud Shell:
+     bash infra/azure/ops.sh $ENV_NAME email-setup
+   and then deploy.sh $ENV_NAME runs again.
+
+EMAIL
+fi
 
 1. DNS (where beedab.com is managed): add an A record
      $API_HOSTNAME  ->  $IP
@@ -160,3 +209,12 @@ cat <<NEXT
      bash infra/azure/ops.sh $ENV_NAME restore-drill
 
 NEXT
+if [ "$EMAIL_PENDING" = yes ]; then
+  cat <<EMAIL
+4. EMAIL IS NOT SET UP: sign-up confirmations, password resets and invitations
+   won't be delivered. The founder runs once in Azure Cloud Shell:
+     bash infra/azure/ops.sh $ENV_NAME email-setup
+   and then deploy.sh $ENV_NAME runs again.
+
+EMAIL
+fi
