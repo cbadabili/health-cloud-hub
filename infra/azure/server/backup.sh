@@ -21,6 +21,10 @@ KEEP_LOCAL_DAYS=${KEEP_LOCAL_DAYS:-3}
 BACKUP_DIR=${BACKUP_DIR:-$(cd "$STACK_DIR/../.." && pwd)/backups}
 CONTAINER=db-backups
 
+# Azure Monitor watches syslog for these lines; no "backup ok" in 26 hours raises an alert.
+heartbeat() { command -v logger >/dev/null && logger -t clinithetics-backup "clinithetics-backup: $*" || true; }
+trap 'heartbeat "backup FAILED (line $LINENO)"' ERR
+
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 day_path=$(date -u +%Y/%m/%d)
 mkdir -p "$BACKUP_DIR"
@@ -55,4 +59,7 @@ if [ "$UPLOAD" != "skip" ]; then
 fi
 
 find "$BACKUP_DIR" -maxdepth 1 -type f -mtime +"$KEEP_LOCAL_DAYS" -delete
+if [ "$UPLOAD" != "skip" ]; then
+  heartbeat "backup ok ($ENV_NAME, $stamp)"
+fi
 echo "Backup finished."

@@ -29,7 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # Same major version as production (Supabase's Postgres 17 image).
+        image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
         ports:
@@ -49,3 +50,17 @@ jobs:
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - run: scripts/test-db.sh
+
+  infra:
+    name: Azure template and server scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell scripts pass shellcheck
+        run: shellcheck -x infra/azure/*.sh infra/azure/server/*.sh
+      - name: Azure template compiles against Azure's schemas
+        run: |
+          az bicep install
+          az bicep build --file infra/azure/main.bicep --stdout > /dev/null
+      - name: cloud-init file is valid YAML
+        run: python3 -c "import yaml; yaml.safe_load(open('infra/azure/cloud-init.yaml'))"
