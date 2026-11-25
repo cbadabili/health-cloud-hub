@@ -1,0 +1,38 @@
+# Public entry point for the Clinithetics API.
+# CADDY_SITE is the API hostname (e.g. api.clinithetics.beedab.com), so Caddy
+# gets and renews a Let's Encrypt certificate for it automatically.
+
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+{$CADDY_SITE} {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+		-Via
+	}
+
+	# Only the APIs the app uses. Everything else (Studio, pg-meta, functions,
+	# analytics) stays private and is reached over an SSH tunnel.
+	@api path /auth/v1/* /rest/v1/* /storage/v1/*
+	handle @api {
+		reverse_proxy api-gw:8000 {
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle {
+		respond "Not found" 404
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
