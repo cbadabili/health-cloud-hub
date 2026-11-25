@@ -1,0 +1,69 @@
+#cloud-config
+# First boot of a Clinithetics server (Ubuntu 24.04 on Azure).
+# Prepares the data disk, Docker, the Azure CLI and automatic security updates.
+# No secrets here: setup-server.sh generates them and keeps them in Key Vault.
+
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - postgresql-client
+  - unattended-upgrades
+
+write_files:
+  - path: /etc/docker/daemon.json
+    permissions: "0644"
+    content: |
+      {
+        "data-root": "/srv/supabase/docker",
+        "log-driver": "local",
+        "log-opts": { "max-size": "20m", "max-file": "5" },
+        "live-restore": true
+      }
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+  - path: /usr/local/sbin/clinithetics-mount-data-disk
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      # Format (first boot only) and mount the data disk (LUN 0) at /srv/supabase.
+      set -euo pipefail
+      disk=""
+      for candidate in /dev/disk/azure/data/by-lun/0 /dev/disk/azure/scsi1/lun0; do
+        for _ in $(seq 1 60); do
+          [ -e "$candidate" ] && { disk=$(readlink -f "$candidate"); break 2; }
+          sleep 2
+        done
+      done
+      [ -n "$disk" ] || { echo "Data disk (LUN 0) not found" >&2; exit 1; }
+      if ! blkid "$disk" >/dev/null 2>&1; then
+        mkfs.ext4 -L clinithetics-data "$disk"
+      fi
+      uuid=$(blkid -s UUID -o value "$disk")
+      mkdir -p /srv/supabase
+      grep -q "$uuid" /etc/fstab || echo "UUID=$uuid /srv/supabase ext4 defaults,nofail,discard 0 2" >> /etc/fstab
+      mountpoint -q /srv/supabase || mount /srv/supabase
+      chmod 750 /srv/supabase
+
+runcmd:
+  - /usr/local/sbin/clinithetics-mount-data-disk
+  # Docker Engine and Compose from Docker's own repository.
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  # Azure CLI (used with the server's managed identity for Key Vault and backups).
+  - curl -fsSL https://aka.ms/InstallAzureCLIDeb | bash
+  - systemctl enable --now unattended-upgrades
+  - mkdir -p /var/lib/clinithetics && touch /var/lib/clinithetics/cloud-init-done
+
+final_message: "Clinithetics server prepared after $UPTIME seconds"

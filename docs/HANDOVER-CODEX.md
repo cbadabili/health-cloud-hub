@@ -25,7 +25,7 @@ Supabase's hosted platform (managed Edge Functions, hosted cron, branching,
 Supabase AI, log drains) without checking they run self-hosted.
 
 **Founder still has to** (not code; don't block on these, but don't guess them either):
-1. Stand up the Azure environment and apply the migrations (runbook §3–§6),
+1. Create the Azure servers with `infra/azure/deploy.sh` (see `infra/azure/README.md`),
    including enabling TOTP MFA in the Auth service. Domains are set: app
    `clinithetics.beedab.com`, API `api.clinithetics.beedab.com` (already
    allowed in the `vercel.json` CSP).
@@ -113,13 +113,19 @@ possible duplicates unless `_confirm_new`), `find_patient_duplicates`,
 ## Before you start
 
 **Database migrations.** The founder (or whoever runs the server) applies
-migrations by hand with `psql` on the Azure server, in filename order (runbook
-§5). Increment 1 adds
+migrations by re-running `bash infra/azure/deploy.sh staging` then `prod`;
+it applies only new files, in filename order, and records them in
+`ops.applied_migrations`. Production runs **Postgres 17** (CI tests on 17 too). Increment 1 adds
 `20261125090000-tenancy-foundation.sql`. **It wipes test rows in
 appointments, medical records, prescriptions and invoices** on its first run
 (there is no production data yet). After applying it:
-- make sure **TOTP MFA** is enabled in the Auth service config (runbook §4);
+- TOTP MFA is already enabled by `infra/azure/server/docker-compose.clinithetics.yml`;
 - regenerate `src/integrations/supabase/types.ts` (or edit by hand).
+
+**Never edit a migration that has been applied.** The server records each
+file's checksum and stops if an applied file changes. Fix things with a new
+migration. Infrastructure lives in `infra/azure/`; CI checks it with
+shellcheck and the Bicep compiler.
 
 The app shows "Practice features aren't switched on yet" when `my_practices`
 is missing. Keep doing this for new migrations: an honest "not available yet"

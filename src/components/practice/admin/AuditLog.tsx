@@ -16,6 +16,8 @@ const TABLE_LABELS: Record<string, string> = {
   patient_contacts: "Patient contact",
   patient_portal_links: "Portal access",
   staff_memberships: "Staff role",
+  membership_sites: "Staff site access",
+  providers: "Clinician profile",
   staff_invitations: "Invitation",
   appointments: "Appointment",
   medical_records: "Clinical note",
@@ -31,6 +33,7 @@ const describe = (e: AuditEvent) => {
   if (e.action === "patients.view") return "Patient record opened";
   if (e.action === "patients.merge") return "Patient records merged";
   if (e.action === "patients.registered_despite_duplicates") return "Patient registered despite possible duplicates";
+  if (e.action === "practices.insert") return "Practice created";
   const [, verb] = e.action.split(".");
   const thing = TABLE_LABELS[e.target_table ?? ""] ?? e.target_table ?? "Record";
   const v = { insert: "created", update: "updated", delete: "deleted" }[verb?.toLowerCase() ?? ""] ?? verb ?? e.action;
