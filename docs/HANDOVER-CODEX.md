@@ -1,5 +1,7 @@
 # Handover: building on the practice platform
 
+> Short version for pasting into Codex: [`docs/CODEX-PROMPT.md`](CODEX-PROMPT.md).
+
 Clinithetics is a React + Vite + Supabase **practice management system** for
 independent clinics in **Botswana and South Africa**. Reception, nurses,
 clinicians, billers and managers work on one shared patient record per
