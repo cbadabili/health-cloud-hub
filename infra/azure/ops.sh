@@ -8,6 +8,7 @@
 #   restore-drill  restore the newest backup into a temporary database and compare
 #   smoke          (staging only) end-to-end test: sign-up, two-step sign-in, practice, patient
 #   studio         how to open Supabase Studio (the database admin) privately
+#   email-setup    (founder, in Cloud Shell) create the email login; then re-run deploy.sh
 set -euo pipefail
 
 ENV_NAME=${1:-}
@@ -49,6 +50,15 @@ case "$CMD" in
       SERVICE_ROLE_KEY=$(az keyvault secret show --vault-name "$v" --name service-role-key --query value -o tsv) \
       node infra/azure/server/smoke-flow.mjs)
     ;;
+  email-setup)
+    acs=$(az resource list --resource-group "$RG" --resource-type Microsoft.Communication/communicationServices --query "[0].name" --output tsv)
+    email_service=$(az resource list --resource-group "$RG" --resource-type Microsoft.Communication/emailServices --query "[0].name" --output tsv)
+    domain=$(az resource show --resource-group "$RG" --name "$email_service/AzureManagedDomain" \
+      --resource-type Microsoft.Communication/emailServices/domains --query properties.mailFromSenderDomain --output tsv)
+    [ -n "$acs" ] && [ -n "$domain" ] || { echo "Deploy $ENV_NAME first (no email service found in $RG)." >&2; exit 1; }
+    bash "$HERE/acs-smtp.sh" "$RG" "$acs" "$(vault)" "DoNotReply@$domain" "$ENV_NAME"
+    echo "Now run: bash infra/azure/deploy.sh $ENV_NAME"
+    ;;
   studio)
     cat <<HELP
 Studio (the database admin) is never exposed to the internet. To open it:
@@ -61,5 +71,5 @@ Studio (the database admin) is never exposed to the internet. To open it:
   4. Remove SSH_SOURCE_CIDR again afterwards.
 HELP
     ;;
-  *) sed -n '2,12p' "$0"; exit 1 ;;
+  *) sed -n '2,11p' "$0"; exit 1 ;;
 esac

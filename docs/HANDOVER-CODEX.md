@@ -33,8 +33,42 @@ Supabase AI, log drains) without checking they run self-hosted.
    Botswana in-country copy question, the pilot clinics and the Omang format
    (`checkNationalId` in `src/lib/locale.ts` assumes 9 digits and only warns).
 
-**Work order for Codex:** Task A (leftovers), then Task B (Increment 2, front
-desk). One PR per task. Don't start Increments 3–7.
+**Work order for Codex:** Task 0 (deploy staging), then Task A (leftovers),
+then Task B (Increment 2, front desk). One PR per code task. Don't start
+Increments 3–7.
+
+---
+
+## Task 0: deploy staging to Azure
+
+Only if your environment has the Azure app login described in
+`infra/azure/README.md` ("Letting Codex deploy"). If it doesn't, skip to
+Task A and tell the founder.
+
+1. Sign in with the app login from the environment's secrets, without echoing them:
+   ```bash
+   az login --service-principal -u "$AZURE_CLIENT_ID" -p "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID" --output none
+   az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+   ```
+2. Run `bash infra/azure/deploy.sh staging` from the repo root (settings come
+   from the environment variables; no `config.env` needed).
+3. Run `bash infra/azure/ops.sh staging check` once the founder has added the DNS record.
+4. Report back to the founder:
+   - the "Three things for you to do now" block `deploy.sh` prints (DNS
+     record, Vercel variables; the anon key in it is public by design);
+   - the email note if shown (they run `ops.sh staging email-setup`, then you re-run `deploy.sh staging`);
+   - any errors, with the command and its output.
+
+Rules for Task 0:
+- **Never print, log or commit** the client secret, the service role key,
+  the database password or anything else from Key Vault.
+- **Never run `deploy.sh prod`** without the founder's written go-ahead for
+  that specific run. **Never run `ops.sh prod smoke`** (it refuses anyway).
+- If a step is refused for permissions, **report it**. Don't edit
+  `main.bicep`, role assignments, network rules or the server lock-down to
+  get past it.
+- Re-running `deploy.sh` is safe; deleting resources or resource groups is
+  not allowed.
 
 ---
 

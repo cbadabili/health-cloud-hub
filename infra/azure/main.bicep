@@ -26,6 +26,10 @@ param adminUsername string = 'clinadmin'
 @description('Object ID of the person deploying (az ad signed-in-user show --query id). Gets access to the deploy files, backups and secrets.')
 param deployerObjectId string
 
+@description('User when a person deploys from Cloud Shell; ServicePrincipal when an app login (e.g. Codex or CI) deploys.')
+@allowed(['User', 'ServicePrincipal'])
+param deployerPrincipalType string = 'User'
+
 @description('Optional: one IP range allowed to SSH in (e.g. "196.25.1.10/32"). Empty = no SSH from the internet.')
 param sshSourceCidr string = ''
 
@@ -393,7 +397,7 @@ resource deployerBlobs 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleBlobContributor)
     principalId: deployerObjectId
-    principalType: 'User'
+    principalType: deployerPrincipalType
   }
 }
 
@@ -403,7 +407,7 @@ resource deployerSecrets 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleKvSecretsOfficer)
     principalId: deployerObjectId
-    principalType: 'User'
+    principalType: deployerPrincipalType
   }
 }
 
